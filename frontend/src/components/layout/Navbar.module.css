@@ -1,0 +1,38 @@
+.navbar {
+  padding: 30px 40px;
+  background-color: transparent;
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.loginText {
+  color: var(--color-text-dark);
+  font-size: 14px;
+}
+
+.loginBtn {
+  padding: 8px 24px;
+  border-radius: 999px;
+}
+
+@media (max-width: 768px) {
+  .navbar {
+    padding: 20px;
+  }
+  
+  .loginText {
+    display: none;
+  }
+}

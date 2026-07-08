@@ -1,0 +1,30 @@
+.logoContainer {
+  display: inline-flex;
+  flex-direction: column;
+  text-decoration: none;
+}
+
+.logoMain {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon {
+  font-size: 32px;
+  color: var(--color-primary-green);
+  transform: rotate(-45deg);
+}
+
+.text {
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
+  letter-spacing: -0.5px;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: var(--color-text-gray);
+  margin-top: 4px;
+}
