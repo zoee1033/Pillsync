@@ -67,5 +67,4 @@ npm run dev
 - This branch was created for Milestone 1 and is ready for review. Please open a Pull Request to merge `milestone-1` into `main` and request review from the project mentor.
 - Do not commit secrets (keep `.env` in `.gitignore`).
 
----
-If you need a tailored PR description, I can generate one to paste into GitHub.
+
