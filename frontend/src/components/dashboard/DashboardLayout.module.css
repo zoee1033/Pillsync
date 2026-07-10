@@ -1,0 +1,42 @@
+.layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: #F8FAFC; /* Slate background as requested */
+  color: var(--color-text-dark);
+}
+
+.mainContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-left: 260px; /* Sidebar width */
+  min-height: 100vh;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.collapsedMain {
+  margin-left: 80px; /* Collapsed sidebar width */
+}
+
+.contentBody {
+  flex: 1;
+  padding: 40px;
+  overflow-x: hidden;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .mainContent {
+    margin-left: 0 !important;
+  }
+  
+  .contentBody {
+    padding: 24px 16px;
+  }
+}

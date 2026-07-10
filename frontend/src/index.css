@@ -1,0 +1,60 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --color-bg-warm-ivory: #FAF7F2;
+  --color-primary-green: #0E8A63;
+  --color-light-green: #DDF3E9;
+  --color-dark-green: #166534;
+  --color-accent-orange: #C96D5A;
+  --color-text-dark: #202124;
+  --color-text-gray: #6B7280;
+  --color-card-white: #FFFFFF;
+  --color-border: #E5E7EB;
+  
+  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.05);
+  --radius-card: 20px;
+  --radius-button: 999px;
+  --radius-input: 12px;
+
+  --font-family-main: 'Inter', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family-main);
+  background-color: var(--color-bg-warm-ivory);
+  color: var(--color-text-dark);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  color: var(--color-text-dark);
+  line-height: 1.2;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+  border: none;
+  background: none;
+}
+
+/* Utilities */
+.text-primary-green { color: var(--color-primary-green); }
+.text-dark-green { color: var(--color-dark-green); }
+.text-gray { color: var(--color-text-gray); }
+
+.bg-light-green { background-color: var(--color-light-green); }
+.bg-card-white { background-color: var(--color-card-white); }

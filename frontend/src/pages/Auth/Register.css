@@ -1,0 +1,134 @@
+.register-illustration-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+  width: 100%;
+}
+
+.welcome-text {
+  margin-bottom: 24px;
+  position: relative;
+  z-index: 20;
+}
+
+.welcome-text h2 {
+  font-size: 46px;
+  line-height: 1.2;
+  margin-bottom: 12px;
+}
+
+.welcome-text p {
+  font-size: 16px;
+  color: var(--color-text-gray);
+  max-width: 400px;
+  line-height: 1.5;
+}
+
+.register-content-wrapper {
+  position: relative;
+  display: flex;
+  flex: 1;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+}
+
+.register-main-img {
+  width: 100%;
+  max-width: 500px;
+  height: auto;
+  max-height: 600px;
+  object-fit: contain;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+  position: relative;
+  z-index: 10;
+}
+
+.reg-leaf {
+  position: absolute;
+  bottom: -20px;
+  right: -20px;
+  width: 160px;
+  opacity: 0.8;
+  z-index: 5;
+}
+
+.reg-leaf-top {
+  position: absolute;
+  top: 20%;
+  right: -30px;
+  width: 120px;
+  opacity: 0.8;
+  z-index: 5;
+}
+
+.reg-card {
+  max-width: 500px;
+}
+
+.auth-header h1 {
+  font-size: 36px;
+  margin-bottom: 8px;
+}
+
+.role-selection {
+  margin-bottom: 24px;
+}
+
+.role-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-dark);
+  margin-bottom: 12px;
+}
+
+.role-label span {
+  font-weight: 400;
+  color: var(--color-text-gray);
+  font-size: 13px;
+}
+
+.role-cards {
+  display: flex;
+  gap: 16px;
+}
+
+.role-card {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-input);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: var(--color-card-white);
+}
+
+.role-card:hover {
+  border-color: var(--color-primary-green);
+}
+
+.role-card.selected {
+  border-color: var(--color-primary-green);
+  background-color: var(--color-light-green);
+  box-shadow: 0 0 0 1px var(--color-primary-green);
+}
+
+.role-icon {
+  font-size: 24px;
+}
+
+.role-text h5 {
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.role-text p {
+  font-size: 11px;
+  color: var(--color-text-gray);
+}

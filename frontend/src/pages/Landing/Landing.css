@@ -1,0 +1,255 @@
+.landing-page {
+  min-height: 100vh;
+  background-color: var(--color-bg-warm-ivory);
+  background-image: radial-gradient(circle at 10% 20%, rgba(221, 243, 233, 0.4) 0%, transparent 40%),
+                    radial-gradient(circle at 90% 80%, rgba(221, 243, 233, 0.4) 0%, transparent 40%);
+  position: relative;
+  overflow: hidden;
+}
+
+.landing-content {
+  padding: 40px 20px;
+}
+
+.landing-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.hero-section {
+  display: flex;
+  align-items: center;
+  gap: 80px;
+  margin-top: 40px;
+}
+
+.hero-images {
+  flex: 1;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.main-image {
+  width: 100%;
+  max-width: 600px;
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-soft);
+  position: relative;
+  z-index: 2;
+  object-fit: cover;
+}
+
+.floating-card {
+  position: absolute;
+  bottom: -40px;
+  z-index: 3;
+  padding: 20px 30px;
+  width: 90%;
+  max-width: 450px;
+}
+
+.reminder-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.reminder-icon-box {
+  background-color: var(--color-light-green);
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reminder-icon-box .icon {
+  font-size: 32px;
+  color: var(--color-primary-green);
+  transform: rotate(-45deg);
+}
+
+.reminder-details {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  margin-left: 20px;
+}
+
+.reminder-details .label {
+  font-size: 13px;
+  color: var(--color-text-gray);
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.reminder-details .medicine-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-text-dark);
+  margin-bottom: 4px;
+}
+
+.reminder-details .time {
+  font-size: 14px;
+  color: var(--color-text-gray);
+}
+
+.reminder-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--color-primary-green);
+  border-left: 1px solid var(--color-border);
+  padding-left: 20px;
+}
+
+.icon-bell {
+  font-size: 24px;
+  margin-bottom: 4px;
+}
+
+.reminder-status span {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.leaf-decor {
+  position: absolute;
+  width: 120px;
+  opacity: 0.8;
+}
+
+.leaf-top-left {
+  top: -40px;
+  left: -20px;
+}
+
+.leaf-bottom-right {
+  bottom: -60px;
+  right: -20px;
+}
+
+.hero-text {
+  flex: 1;
+  max-width: 550px;
+}
+
+.hero-heading {
+  font-size: 64px;
+  letter-spacing: -1px;
+  margin-bottom: 24px;
+}
+
+.highlight-text {
+  color: var(--color-primary-green);
+}
+
+.hero-description {
+  font-size: 18px;
+  color: var(--color-text-gray);
+  line-height: 1.6;
+  margin-bottom: 40px;
+}
+
+.feature-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 48px;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  padding: 16px 24px;
+  gap: 20px;
+  border-radius: 16px;
+  transition: transform 0.2s ease;
+}
+
+.feature-item:hover {
+  transform: translateX(8px);
+}
+
+.feature-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.feature-text h3 {
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.feature-text p {
+  font-size: 14px;
+  color: var(--color-text-gray);
+}
+
+.cta-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.get-started-btn {
+  padding: 18px 48px;
+  font-size: 18px;
+  border-radius: 999px;
+  box-shadow: 0 10px 25px rgba(201, 109, 90, 0.3);
+}
+
+.signup-text {
+  font-size: 15px;
+  color: var(--color-text-gray);
+  margin-left: 12px;
+}
+
+.signup-link {
+  color: var(--color-primary-green);
+  font-weight: 600;
+}
+
+.signup-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 1024px) {
+  .hero-section {
+    flex-direction: column;
+    text-align: center;
+    gap: 100px;
+  }
+  
+  .hero-text {
+    max-width: 100%;
+  }
+
+  .cta-section {
+    align-items: center;
+  }
+  
+  .feature-item {
+    text-align: left;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-heading {
+    font-size: 40px;
+  }
+  
+  .floating-card {
+    width: 95%;
+    padding: 16px;
+  }
+}

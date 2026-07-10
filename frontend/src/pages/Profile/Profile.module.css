@@ -1,0 +1,339 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap');
+
+.profileContainer {
+  font-family: 'Inter', sans-serif;
+}
+
+.headerSection {
+  margin-bottom: 32px;
+}
+
+.pageTitle {
+  font-family: 'Poppins', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-text-dark);
+}
+
+.pageSubtitle {
+  font-size: 14px;
+  color: var(--color-text-gray);
+  margin-top: 4px;
+}
+
+/* Alert styles */
+.alert {
+  padding: 16px 20px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  font-size: 14px;
+  font-weight: 500;
+  animation: fadeIn 0.3s ease;
+}
+
+.alertSuccess {
+  background-color: #E6FFFA;
+  color: #319795;
+  border: 1px solid #B2F5EA;
+}
+
+.alertError {
+  background-color: #FFF5F5;
+  color: #E53E3E;
+  border: 1px solid #FED7D7;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Grid Layout */
+.profileGrid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+/* Left Column - Avatar Card */
+.avatarCard {
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: var(--shadow-soft);
+  border-radius: var(--radius-card);
+}
+
+.avatarContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 32px;
+  width: 100%;
+}
+
+.avatarLarge {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background-color: var(--color-primary-green);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 24px rgba(14, 138, 99, 0.2);
+  border: 4px solid var(--color-light-green);
+}
+
+.userName {
+  font-family: 'Poppins', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-text-dark);
+}
+
+.userRoleBadge {
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-primary-green);
+  background-color: var(--color-light-green);
+  padding: 4px 14px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.accountStatus {
+  width: 100%;
+  border-top: 1px solid var(--color-border);
+  padding-top: 24px;
+}
+
+.statusRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.statusRow:last-child {
+  margin-bottom: 0;
+}
+
+.statusLabel {
+  color: var(--color-text-gray);
+  font-weight: 500;
+}
+
+.statusActive {
+  color: #38A169;
+  font-weight: 600;
+  background-color: #C6F6D5;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+.statusDate {
+  color: var(--color-text-dark);
+  font-weight: 600;
+}
+
+/* Right Column - Forms & Security */
+.detailsCard {
+  padding: 32px;
+  box-shadow: var(--shadow-soft);
+  border-radius: var(--radius-card);
+  margin-bottom: 32px;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 16px;
+}
+
+.cardTitle {
+  font-family: 'Poppins', sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-text-dark);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cardHeaderIcon {
+  color: var(--color-primary-green);
+}
+
+.editBtn {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+}
+
+.profileForm {
+  display: flex;
+  flex-direction: column;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-top: 32px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 24px;
+}
+
+/* Security Card */
+.securityCard {
+  padding: 32px;
+  box-shadow: var(--shadow-soft);
+  border-radius: var(--radius-card);
+}
+
+.cardDesc {
+  font-size: 14px;
+  color: var(--color-text-gray);
+  margin-bottom: 24px;
+  line-height: 1.4;
+}
+
+.passwordForm {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.passwordValidationLayout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.passwordInputs {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Password Strength Indicator */
+.strengthIndicator {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: -6px;
+}
+
+.strengthBarContainer {
+  height: 6px;
+  background-color: #E2E8F0;
+  border-radius: 3px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.strengthBar {
+  height: 100%;
+  transition: width 0.3s ease, background-color 0.3s ease;
+  width: 0%;
+}
+
+.strengthLabel {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Requirement Checklist Card */
+.checklistCard {
+  background-color: #FAFBFD;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.checklistCard h5 {
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-dark);
+  margin-bottom: 4px;
+}
+
+.checklistCard ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.checklistCard li {
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.checklistCard li span {
+  font-weight: bold;
+}
+
+.valid {
+  color: #38A169;
+}
+
+.invalid {
+  color: var(--color-text-gray);
+  opacity: 0.7;
+}
+
+.passwordFormActions {
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid var(--color-border);
+  padding-top: 24px;
+}
+
+@media (max-width: 1024px) {
+  .profileGrid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .formGrid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .passwordValidationLayout {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}

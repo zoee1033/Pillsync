@@ -1,0 +1,276 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap');
+
+.dashboardContainer {
+  font-family: 'Inter', sans-serif;
+  color: var(--color-text-dark);
+}
+
+.headerSection {
+  margin-bottom: 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.pageTitle {
+  font-family: 'Poppins', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-text-dark);
+}
+
+.dateText {
+  font-size: 14px;
+  color: var(--color-text-gray);
+  font-weight: 500;
+}
+
+/* Grid Layout */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-soft);
+  border-radius: var(--radius-card);
+}
+
+.cardTitle {
+  font-family: 'Poppins', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-dark);
+  margin-bottom: 20px;
+}
+
+/* 1. Welcome Card */
+.welcomeCard {
+  grid-column: span 2;
+  background-color: var(--color-card-white);
+  padding: 32px;
+  justify-content: space-between;
+}
+
+.welcomeInfo {
+  display: flex;
+  gap: 20px;
+}
+
+.emoji {
+  font-size: 36px;
+  line-height: 1;
+}
+
+.cardText {
+  font-size: 15px;
+  color: var(--color-text-gray);
+  line-height: 1.6;
+  margin-top: 4px;
+}
+
+.statusBanner {
+  margin-top: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  background-color: #FFFDF5;
+  border: 1px solid #FFE0B2;
+  border-radius: 12px;
+  font-size: 13px;
+  color: #D84315;
+  font-weight: 500;
+}
+
+.statusIcon {
+  color: #EF6C00;
+  flex-shrink: 0;
+}
+
+/* 2. Quick Actions Card */
+.quickActionsCard {
+  grid-column: span 1;
+  padding: 32px;
+}
+
+.actionGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  justify-content: center;
+}
+
+.actionLink {
+  width: 100%;
+}
+
+.actionBtn {
+  width: 100%;
+  padding: 14px;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: 12px;
+}
+
+/* 3. Profile Card */
+.profileCard {
+  grid-column: span 1;
+  padding: 32px;
+}
+
+.profileDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.detailRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 12px;
+}
+
+.detailRow:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.detailLabel {
+  color: var(--color-text-gray);
+  font-weight: 500;
+}
+
+.detailValue {
+  color: var(--color-text-dark);
+  font-weight: 600;
+  word-break: break-all;
+  text-align: right;
+  max-width: 65%;
+}
+
+.roleText {
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.roleText.patient {
+  color: var(--color-primary-green);
+}
+
+.roleText.caregiver {
+  color: #2B6CB0;
+}
+
+.statusActive {
+  color: #38A169;
+  font-weight: 600;
+  background-color: #C6F6D5;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+/* 4. Activity Card */
+.activityCard {
+  grid-column: span 2;
+  padding: 32px;
+}
+
+.activityList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.activityItem {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.activityIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background-color: var(--color-light-green);
+  color: var(--color-primary-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.activityDetails {
+  display: flex;
+  flex-direction: column;
+}
+
+.activityDesc {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-dark);
+}
+
+.activityTime {
+  font-size: 12px;
+  color: var(--color-text-gray);
+  margin-top: 2px;
+}
+
+/* Responsive grid changes */
+@media (max-width: 1024px) {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .welcomeCard {
+    grid-column: span 2;
+  }
+  
+  .quickActionsCard {
+    grid-column: span 1;
+  }
+  
+  .profileCard {
+    grid-column: span 1;
+  }
+  
+  .activityCard {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .welcomeCard, .quickActionsCard, .profileCard, .activityCard {
+    grid-column: span 1;
+  }
+  
+  .headerSection {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  
+  .pageTitle {
+    font-size: 24px;
+  }
+}
