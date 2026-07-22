@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import DashboardLayout from "../../components/dashboard/DashboardLayout";
+import useAuth from "../../hooks/useAuth";
 import Card from "../../components/common/Card";
 import Input from "../../components/common/Input";
 import Button from "../../components/common/Button";
@@ -7,7 +7,9 @@ import styles from "./Profile.module.css";
 import { updateProfile, changePassword } from "../../services/profileService";
 import { TbUserEdit, TbLock, TbShieldCheck } from "react-icons/tb";
 
-const ProfileContent = ({ user, onUserUpdate }) => {
+const ProfileContent = () => {
+  const { user, updateUser } = useAuth();
+
   const currentUser = user || {
     full_name: "Health User",
     role: "patient",
@@ -111,7 +113,7 @@ const ProfileContent = ({ user, onUserUpdate }) => {
       });
 
       if (response && response.data) {
-        onUserUpdate(response.data);
+        updateUser(response.data);
         setProfileStatus({ type: "success", message: "Profile updated successfully." });
         setIsEditing(false);
       }
@@ -412,12 +414,4 @@ const ProfileContent = ({ user, onUserUpdate }) => {
   );
 };
 
-const Profile = ({ user, onUserUpdate }) => {
-  return (
-    <DashboardLayout>
-      <ProfileContent user={user} onUserUpdate={onUserUpdate} />
-    </DashboardLayout>
-  );
-};
-
-export default Profile;
+export default ProfileContent;

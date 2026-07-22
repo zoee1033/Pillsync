@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import DashboardLayout from "../../components/dashboard/DashboardLayout";
+import useAuth from "../../hooks/useAuth";
 import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
 import styles from "./Settings.module.css";
@@ -13,7 +13,8 @@ import {
   TbDeviceMobile,
 } from "react-icons/tb";
 
-const SettingsContent = ({ user }) => {
+const SettingsContent = () => {
+  const { user } = useAuth();
   const [notifications, setNotifications] = useState({
     emailAlerts: true,
     reminderPush: true,
@@ -174,12 +175,4 @@ const SettingsContent = ({ user }) => {
   );
 };
 
-const Settings = ({ user }) => {
-  return (
-    <DashboardLayout>
-      <SettingsContent user={user} />
-    </DashboardLayout>
-  );
-};
-
-export default Settings;
+export default SettingsContent;

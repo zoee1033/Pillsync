@@ -13,6 +13,7 @@ import Profile from "../pages/Profile/Profile";
 import Settings from "../pages/Settings/Settings";
 
 import ProtectedRoute from "./ProtectedRoute";
+import DashboardLayout from "../components/dashboard/DashboardLayout";
 
 const AppRoutes = () => {
   return (
@@ -36,34 +37,18 @@ const AppRoutes = () => {
           element={<Register />}
         />
 
-        {/* Protected Routes */}
-
+        {/* Protected Routes (layout persists) */}
         <Route
-          path="/dashboard"
           element={
             <ProtectedRoute>
-              <Dashboard />
+              <DashboardLayout />
             </ProtectedRoute>
           }
-        />
-
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/settings"
-          element={
-            <ProtectedRoute>
-              <Settings />
-            </ProtectedRoute>
-          }
-        />
+        >
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/settings" element={<Settings />} />
+        </Route>
 
       </Routes>
     </Router>
