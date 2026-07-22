@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
@@ -32,7 +33,12 @@ const MedicineTypes = [
   "Other",
 ];
 
-const Medicines = ({ treatment, onBack }) => {
+const Medicines = ({ treatment }) => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const routeState = location.state || {};
+  const effectiveTreatment = treatment || routeState.treatment;
+
   const [medicines, setMedicines] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -40,11 +46,21 @@ const Medicines = ({ treatment, onBack }) => {
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState(null);
 
+  const isFiltered = Boolean(effectiveTreatment?.id);
+  const displayMedicines = medicines;
+  const listLoading = loading;
+
   const loadMedicines = async () => {
+    if (!effectiveTreatment?.id) {
+      setMedicines([]);
+      return;
+    }
+
     setLoading(true);
     setMessage({ type: "", text: "" });
+
     try {
-      const response = await getMedicinesByTreatment(treatment.id);
+      const response = await getMedicinesByTreatment(effectiveTreatment.id);
       setMedicines(response);
     } catch (error) {
       console.error(error);
@@ -58,12 +74,13 @@ const Medicines = ({ treatment, onBack }) => {
   };
 
   useEffect(() => {
-    if (treatment?.id) {
+    if (isFiltered) {
       loadMedicines();
+    } else {
       setForm(initialForm);
       setEditingId(null);
     }
-  }, [treatment?.id]);
+  }, [isFiltered]);
 
   const resetForm = () => {
     setForm(initialForm);
@@ -119,7 +136,7 @@ const Medicines = ({ treatment, onBack }) => {
         setMessage({ type: "success", text: "Medicine updated successfully." });
       } else {
         await createMedicine({
-          treatment_id: treatment.id,
+          treatment_id: effectiveTreatment.id,
           medicine_name: form.medicine_name.trim(),
           medicine_type: form.medicine_type,
           dosage: form.dosage.trim(),
@@ -174,152 +191,204 @@ const Medicines = ({ treatment, onBack }) => {
     }
   };
 
+  const openReminders = (medicine) => {
+    navigate("/reminders", { state: { medicine, treatment: effectiveTreatment } });
+  };
+
+  const clearFilter = () => {
+    navigate("/medicines");
+  };
+
+  if (!isFiltered) {
+    return (
+      <div className={styles.medicinePage}>
+        <div className={styles.pageHeader}>
+          <div>
+            <h2 className={styles.pageTitle}>Medicines</h2>
+            <p className={styles.pageSubtitle}>
+              Medicines are organized under Treatments. Open a treatment to create and manage medicines.
+            </p>
+          </div>
+        </div>
+
+        <Card className={styles.messageCard}>
+          <EmptyState
+            title="Select a Treatment"
+            message="Medicines are organized under Treatments. Open a treatment to create and manage medicines."
+            action={
+              <Button variant="secondary" onClick={() => navigate("/treatments")}>Browse Treatments</Button>
+            }
+          />
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.medicinePage}>
-      <div className={styles.controlsRow}>
-        <Button variant="outline" onClick={onBack}>
-          Back to Treatments
-        </Button>
-      </div>
-
       <div className={styles.pageHeader}>
         <div>
           <h2 className={styles.pageTitle}>Medicines</h2>
           <p className={styles.pageSubtitle}>
-            Manage medicines for this treatment plan.
+            {isFiltered
+              ? "Manage medicines for this treatment plan."
+              : "View all medicines across your treatments."}
           </p>
         </div>
       </div>
 
-      <Card className={styles.treatmentCard}>
-        <div className={styles.cardHeader}>
-          <h3 className={styles.treatmentHeading}>Treatment</h3>
-          <span className={styles.treatmentStatus}>{treatment.status || "Active"}</span>
-        </div>
-        <div className={styles.treatmentDetails}>
+      {isFiltered && (
+        <Card className={styles.filterBanner}>
           <div>
-            <div className={styles.detailLabel}>Name</div>
-            <div className={styles.detailValue}>{treatment.disease_name}</div>
+            <div className={styles.filterTitle}>Showing medicines for:</div>
+            <div className={styles.filterValue}>{effectiveTreatment.disease_name}</div>
           </div>
-          <div>
-            <div className={styles.detailLabel}>Doctor</div>
-            <div className={styles.detailValue}>{treatment.doctor_name || "—"}</div>
+          <Button variant="outline" onClick={clearFilter}>
+            Clear Filter
+          </Button>
+        </Card>
+      )}
+
+      {isFiltered && (
+        <Card className={styles.treatmentCard}>
+          <div className={styles.cardHeader}>
+            <h3 className={styles.treatmentHeading}>Treatment</h3>
+            <span className={styles.treatmentStatus}>{effectiveTreatment.status || "Active"}</span>
           </div>
-          <div>
-            <div className={styles.detailLabel}>Duration</div>
-            <div className={styles.detailValue}>
-              {treatment.start_date} - {treatment.end_date}
+          <div className={styles.treatmentDetails}>
+            <div>
+              <div className={styles.detailLabel}>Name</div>
+              <div className={styles.detailValue}>{effectiveTreatment.disease_name}</div>
+            </div>
+            <div>
+              <div className={styles.detailLabel}>Doctor</div>
+              <div className={styles.detailValue}>{effectiveTreatment.doctor_name || "—"}</div>
+            </div>
+            <div>
+              <div className={styles.detailLabel}>Duration</div>
+              <div className={styles.detailValue}>
+                {effectiveTreatment.start_date} - {effectiveTreatment.end_date}
+              </div>
             </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+      )}
 
       <div className={styles.gridLayout}>
-        <Card className={styles.formCard}>
-          <div className={styles.cardHeader}>
-            <h3>{editingId ? "Edit Medicine" : "Add Medicine"}</h3>
-          </div>
-
-          {message.text && (
-            <div className={`${styles.alert} ${message.type === "success" ? styles.alertSuccess : styles.alertError}`}>
-              {message.text}
+        {isFiltered && (
+          <Card className={styles.formCard}>
+            <div className={styles.cardHeader}>
+              <h3>{editingId ? "Edit Medicine" : "Add Medicine"}</h3>
             </div>
-          )}
 
-          <form onSubmit={handleSubmit} className={styles.form}>
-            <Input
-              label="Medicine Name"
-              name="medicine_name"
-              value={form.medicine_name}
-              onChange={handleChange}
-              required
-            />
+            {message.text && (
+              <div className={`${styles.alert} ${message.type === "success" ? styles.alertSuccess : styles.alertError}`}>
+                {message.text}
+              </div>
+            )}
 
-            <div className={styles.selectRow}>
-              <label className={styles.selectLabel}>Medicine Type</label>
-              <select
-                name="medicine_type"
-                value={form.medicine_type}
+            <form onSubmit={handleSubmit} className={styles.form}>
+              <Input
+                label="Medicine Name"
+                name="medicine_name"
+                value={form.medicine_name}
                 onChange={handleChange}
-                className={styles.selectField}
                 required
-              >
-                {MedicineTypes.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <Input
-              label="Dosage"
-              name="dosage"
-              value={form.dosage}
-              onChange={handleChange}
-              required
-            />
-
-            <Input
-              label="Quantity"
-              name="quantity"
-              type="number"
-              min="1"
-              value={form.quantity}
-              onChange={handleChange}
-              required
-            />
-
-            <div className={styles.textareaRow}>
-              <label className={styles.inputLabel}>Instructions</label>
-              <textarea
-                name="instructions"
-                value={form.instructions}
-                onChange={handleChange}
-                className={styles.textarea}
-                rows={4}
-                placeholder="Add medicine instructions"
               />
-            </div>
 
-            <label className={styles.checkboxRow}>
-              <input
-                type="checkbox"
-                name="is_active"
-                checked={form.is_active}
+              <div className={styles.selectRow}>
+                <label className={styles.selectLabel}>Medicine Type</label>
+                <select
+                  name="medicine_type"
+                  value={form.medicine_type}
+                  onChange={handleChange}
+                  className={styles.selectField}
+                  required
+                >
+                  {MedicineTypes.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <Input
+                label="Dosage"
+                name="dosage"
+                value={form.dosage}
                 onChange={handleChange}
+                required
               />
-              <span>Active</span>
-            </label>
 
-            <div className={styles.buttonRow}>
-              <Button type="submit" variant="primary" disabled={saving}>
-                {saving ? "Saving..." : editingId ? "Update Medicine" : "Create Medicine"}
-              </Button>
-              {editingId && (
-                <Button type="button" variant="outline" onClick={resetForm}>
-                  Cancel
+              <Input
+                label="Quantity"
+                name="quantity"
+                type="number"
+                min="1"
+                value={form.quantity}
+                onChange={handleChange}
+                required
+              />
+
+              <div className={styles.textareaRow}>
+                <label className={styles.inputLabel}>Instructions</label>
+                <textarea
+                  name="instructions"
+                  value={form.instructions}
+                  onChange={handleChange}
+                  className={styles.textarea}
+                  rows={4}
+                  placeholder="Add medicine instructions"
+                />
+              </div>
+
+              <label className={styles.checkboxRow}>
+                <input
+                  type="checkbox"
+                  name="is_active"
+                  checked={form.is_active}
+                  onChange={handleChange}
+                />
+                <span>Active</span>
+              </label>
+
+              <div className={styles.buttonRow}>
+                <Button type="submit" variant="primary" disabled={saving}>
+                  {saving ? "Saving..." : editingId ? "Update Medicine" : "Create Medicine"}
                 </Button>
-              )}
-            </div>
-          </form>
-        </Card>
+                {editingId && (
+                  <Button type="button" variant="outline" onClick={resetForm}>
+                    Cancel
+                  </Button>
+                )}
+              </div>
+            </form>
+          </Card>
+        )}
 
         <Card className={styles.listCard}>
           <div className={styles.cardHeader}>
-            <h3>Medicine List</h3>
+            <h3>{isFiltered ? "Medicine List" : "All Medicines"}</h3>
           </div>
 
-          {loading ? (
+          {listLoading ? (
             <LoadingSkeleton lines={5} />
-          ) : medicines.length === 0 ? (
+          ) : displayMedicines.length === 0 ? (
             <EmptyState
-              title="No medicines yet"
-              message="Add a medicine to manage it for this treatment."
+              title="No medicines found"
+              message={
+                isFiltered
+                  ? "Add a medicine to manage it for this treatment."
+                  : "No medicines exist yet. Create one by first choosing a treatment."
+              }
+              action={
+                <Button variant="secondary" onClick={() => navigate("/treatments")}>Browse Treatments</Button>
+              }
             />
           ) : (
             <div className={styles.medicineList}>
-              {medicines.map((medicine) => (
+              {displayMedicines.map((medicine) => (
                 <div key={medicine.id} className={styles.medicineItem}>
                   <div className={styles.medicineHeader}>
                     <div>
@@ -340,6 +409,12 @@ const Medicines = ({ treatment, onBack }) => {
                       <span className={styles.detailLabel}>Quantity</span>
                       <span>{medicine.quantity}</span>
                     </div>
+                    {medicine.treatment_name && (
+                      <div className={styles.detailRow}>
+                        <span className={styles.detailLabel}>Treatment</span>
+                        <span>{medicine.treatment_name}</span>
+                      </div>
+                    )}
                     {medicine.instructions && (
                       <div className={styles.detailRow}>
                         <span className={styles.detailLabel}>Instructions</span>
@@ -352,7 +427,10 @@ const Medicines = ({ treatment, onBack }) => {
                     <Button variant="outline" onClick={() => handleEdit(medicine)}>
                       Edit
                     </Button>
-                    <Button variant="secondary" onClick={() => handleDelete(medicine.id)}>
+                    <Button variant="secondary" onClick={() => openReminders(medicine)}>
+                      Manage Reminders
+                    </Button>
+                    <Button variant="outline" onClick={() => handleDelete(medicine.id)}>
                       Delete
                     </Button>
                   </div>

@@ -8,6 +8,8 @@ import {
   TbChevronLeft,
   TbChevronRight,
   TbPill,
+  TbCalendarTime,
+  TbClock,
 } from "react-icons/tb";
 import Logo from "../common/Logo";
 import styles from "./Sidebar.module.css";
@@ -20,6 +22,9 @@ const Sidebar = ({ user, isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileO
     { path: "/dashboard", label: "Dashboard", icon: <TbLayoutDashboard size={22} /> },
     { path: "/profile", label: "Profile", icon: <TbUser size={22} /> },
     { path: "/treatments", label: "Treatments", icon: <TbPill size={22} /> },
+    { path: "/medicines", label: "Medicines", icon: <TbPill size={22} /> },
+    { path: "/reminders", label: "Reminders", icon: <TbCalendarTime size={22} /> },
+    { path: "/history", label: "History", icon: <TbClock size={22} /> },
     { path: "/settings", label: "Settings", icon: <TbSettings size={22} /> },
   ];
 

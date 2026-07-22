@@ -1,0 +1,134 @@
+.historyPage {
+  min-height: 100%;
+}
+
+.controlsRow {
+  margin-bottom: 24px;
+}
+
+.pageHeader {
+  margin-bottom: 18px;
+}
+
+.pageTitle {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-text-dark);
+}
+
+.pageSubtitle {
+  margin-top: 8px;
+  color: var(--color-text-gray);
+  font-size: 14px;
+}
+
+.detailsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+.detailCard,
+.listCard {
+  padding: 28px;
+  box-shadow: var(--shadow-soft);
+  border-radius: var(--radius-card);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.detailRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: var(--color-text-dark);
+}
+
+.detailLabel {
+  color: var(--color-text-gray);
+  font-weight: 600;
+}
+
+.historyList {
+  display: grid;
+  gap: 18px;
+}
+
+.historyItem {
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  padding: 20px;
+  background: #fff;
+  display: grid;
+  gap: 16px;
+}
+
+.historyHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.historyDate {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--color-text-dark);
+}
+
+.historyMeta {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--color-text-gray);
+}
+
+.historyStatus {
+  padding: 8px 14px;
+  border-radius: 999px;
+  background-color: rgba(72, 187, 120, 0.12);
+  color: #2F855A;
+  font-weight: 700;
+}
+
+.historyDetails {
+  display: grid;
+  gap: 10px;
+}
+
+.itemActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.alert {
+  margin-bottom: 20px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  font-size: 14px;
+}
+
+.alertSuccess {
+  background-color: #E6FFFA;
+  color: #2F855A;
+  border: 1px solid #C6F6D5;
+}
+
+.alertError {
+  background-color: #FFF5F5;
+  color: #C53030;
+  border: 1px solid #FED7D7;
+}
+
+@media (max-width: 1024px) {
+  .detailsGrid {
+    grid-template-columns: 1fr;
+  }
+}

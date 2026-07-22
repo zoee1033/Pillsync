@@ -12,6 +12,9 @@ import Dashboard from "../pages/Dashboard/Dashboard";
 import Profile from "../pages/Profile/Profile";
 import Settings from "../pages/Settings/Settings";
 import Treatments from "../pages/Treatments/Treatments";
+import Medicines from "../pages/Medicines/Medicines";
+import Reminders from "../pages/Reminders/Reminders";
+import History from "../pages/History/History";
 
 import ProtectedRoute from "./ProtectedRoute";
 import DashboardLayout from "../components/dashboard/DashboardLayout";
@@ -49,6 +52,9 @@ const AppRoutes = () => {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/treatments" element={<Treatments />} />
+          <Route path="/medicines" element={<Medicines />} />
+          <Route path="/reminders" element={<Reminders />} />
+          <Route path="/history" element={<History />} />
           <Route path="/settings" element={<Settings />} />
         </Route>
 

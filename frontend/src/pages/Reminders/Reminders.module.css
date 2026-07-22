@@ -1,4 +1,4 @@
-﻿.medicinePage {
+﻿.reminderPage {
   min-height: 100%;
 }
 
@@ -22,9 +22,10 @@
   font-size: 14px;
 }
 
-.treatmentCard,
+.medicineCard,
 .formCard,
-.listCard {
+.listCard,
+.messageCard {
   padding: 28px;
   box-shadow: var(--shadow-soft);
   border-radius: var(--radius-card);
@@ -37,21 +38,25 @@
   margin-bottom: 20px;
 }
 
-.treatmentHeading {
-  font-size: 18px;
+.statusActive,
+.statusInactive {
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 12px;
   font-weight: 700;
 }
 
-.treatmentStatus {
-  padding: 8px 14px;
-  border-radius: 999px;
+.statusActive {
   background-color: rgba(72, 187, 120, 0.12);
-  color: var(--color-text-dark);
-  font-size: 13px;
-  font-weight: 600;
+  color: #2F855A;
 }
 
-.treatmentDetails {
+.statusInactive {
+  background-color: rgba(229, 62, 62, 0.12);
+  color: #C53030;
+}
+
+.medicineDetails {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 20px;
@@ -84,7 +89,7 @@
 }
 
 .selectRow,
-.textareaRow {
+.checkboxRow {
   display: flex;
   flex-direction: column;
 }
@@ -107,16 +112,8 @@
   color: var(--color-text-dark);
 }
 
-.textarea {
-  min-height: 110px;
-  resize: vertical;
-}
-
 .checkboxRow {
-  display: inline-flex;
-  align-items: center;
   gap: 10px;
-  color: var(--color-text-dark);
   font-weight: 600;
 }
 
@@ -145,12 +142,12 @@
   border: 1px solid #FED7D7;
 }
 
-.medicineList {
+.reminderList {
   display: grid;
   gap: 18px;
 }
 
-.medicineItem {
+.reminderItem {
   border: 1px solid var(--color-border);
   border-radius: 18px;
   padding: 20px;
@@ -159,44 +156,26 @@
   gap: 16px;
 }
 
-.medicineHeader {
+.reminderHeader {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 14px;
 }
 
-.medicineName {
+.reminderTime {
   font-size: 17px;
   font-weight: 700;
   color: var(--color-text-dark);
 }
 
-.medicineSubtext {
+.reminderMeta {
   margin-top: 6px;
   font-size: 13px;
   color: var(--color-text-gray);
 }
 
-.statusActive,
-.statusInactive {
-  padding: 8px 14px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.statusActive {
-  background-color: rgba(72, 187, 120, 0.12);
-  color: #2F855A;
-}
-
-.statusInactive {
-  background-color: rgba(229, 62, 62, 0.12);
-  color: #C53030;
-}
-
-.medicineDetails {
+.reminderDetails {
   display: grid;
   gap: 10px;
 }
@@ -244,16 +223,12 @@
   padding: 28px;
 }
 
-.emptyActions {
-  margin-top: 18px;
-}
-
 @media (max-width: 1024px) {
   .gridLayout {
     grid-template-columns: 1fr;
   }
 
-  .treatmentDetails {
+  .medicineDetails {
     grid-template-columns: 1fr;
   }
 }

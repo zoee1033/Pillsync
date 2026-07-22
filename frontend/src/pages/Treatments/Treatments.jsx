@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
-import Medicines from "../Medicines/Medicines";
 import styles from "./Treatments.module.css";
 import {
   getTreatments,
@@ -25,7 +25,6 @@ const Treatments = () => {
   const [treatments, setTreatments] = useState([]);
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState(null);
-  const [selectedTreatment, setSelectedTreatment] = useState(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
@@ -99,12 +98,10 @@ const Treatments = () => {
     setMessage({ type: "", text: "" });
   };
 
-  const openMedicines = (item) => {
-    setSelectedTreatment(item);
-  };
+  const navigate = useNavigate();
 
-  const closeMedicines = () => {
-    setSelectedTreatment(null);
+  const openMedicines = (item) => {
+    navigate("/medicines", { state: { treatment: item } });
   };
 
   const handleDelete = async (id) => {
@@ -119,10 +116,6 @@ const Treatments = () => {
       });
     }
   };
-
-  if (selectedTreatment) {
-    return <Medicines treatment={selectedTreatment} onBack={closeMedicines} />;
-  }
 
   return (
     <div className={styles.treatmentContainer}>
