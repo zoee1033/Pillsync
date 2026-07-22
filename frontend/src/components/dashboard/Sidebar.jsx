@@ -7,6 +7,7 @@ import {
   TbLogout,
   TbChevronLeft,
   TbChevronRight,
+  TbPill,
 } from "react-icons/tb";
 import Logo from "../common/Logo";
 import styles from "./Sidebar.module.css";
@@ -18,6 +19,7 @@ const Sidebar = ({ user, isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileO
   const menuItems = [
     { path: "/dashboard", label: "Dashboard", icon: <TbLayoutDashboard size={22} /> },
     { path: "/profile", label: "Profile", icon: <TbUser size={22} /> },
+    { path: "/treatments", label: "Treatments", icon: <TbPill size={22} /> },
     { path: "/settings", label: "Settings", icon: <TbSettings size={22} /> },
   ];
 
