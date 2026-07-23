@@ -6,6 +6,7 @@ import Input from "../../components/common/Input";
 import EmptyState from "../../components/ui/EmptyState";
 import LoadingSkeleton from "../../components/ui/LoadingSkeleton";
 import {
+  getAllReminders,
   getRemindersByMedicine,
   createReminder,
   updateReminder,
@@ -41,17 +42,14 @@ const Reminders = ({ medicine, treatment }) => {
   const [editingId, setEditingId] = useState(null);
 
   const loadReminders = async () => {
-    if (!effectiveMedicine?.id) {
-      setReminders([]);
-      return;
-    }
-
     setLoading(true);
     setMessage({ type: "", text: "" });
 
     try {
-      const response = await getRemindersByMedicine(effectiveMedicine.id);
-      setReminders(response);
+      const response = effectiveMedicine?.id
+        ? await getRemindersByMedicine(effectiveMedicine.id)
+        : await getAllReminders();
+      setReminders(response || []);
     } catch (error) {
       console.error(error);
       setMessage({
@@ -64,13 +62,9 @@ const Reminders = ({ medicine, treatment }) => {
   };
 
   useEffect(() => {
-    if (effectiveMedicine?.id) {
-      loadReminders();
-    } else {
-      setReminders([]);
-      setForm(initialForm);
-      setEditingId(null);
-    }
+    loadReminders();
+    setForm(initialForm);
+    setEditingId(null);
   }, [effectiveMedicine?.id]);
 
   const resetForm = () => {
@@ -219,7 +213,7 @@ const Reminders = ({ medicine, treatment }) => {
           <p className={styles.pageSubtitle}>
             {isFiltered
               ? `Manage reminders for ${effectiveMedicine.medicine_name}.`
-              : "Open a medicine from Medicines to manage reminders for it."}
+              : "View all reminders across your medicines."}
           </p>
         </div>
       </div>
@@ -237,16 +231,68 @@ const Reminders = ({ medicine, treatment }) => {
       )}
 
       {!isFiltered ? (
-        <Card className={styles.messageCard}>
-          <EmptyState
-            title="Select a Medicine"
-            message="Reminders are shown for a selected medicine. Use the Medicines page to choose a medicine and manage its reminders."
-            action={
-              <Button variant="secondary" onClick={() => navigate("/medicines")}>
-                Browse Medicines
-              </Button>
-            }
-          />
+        <Card className={styles.listCard}>
+          <div className={styles.cardHeader}>
+            <h3>All Reminders</h3>
+          </div>
+
+          {loading ? (
+            <LoadingSkeleton lines={5} />
+          ) : reminders.length === 0 ? (
+            <EmptyState
+              title="No reminders yet"
+              message="Create reminders from a selected medicine to start tracking them here."
+              action={
+                <Button variant="secondary" onClick={() => navigate("/medicines")}>
+                  Browse Medicines
+                </Button>
+              }
+            />
+          ) : (
+            <div className={styles.reminderList}>
+              {reminders.map((reminder) => (
+                <div key={reminder.id} className={styles.reminderItem}>
+                  <div className={styles.reminderHeader}>
+                    <div>
+                      <div className={styles.reminderTime}>{reminder.reminder_time}</div>
+                      <div className={styles.reminderMeta}>{reminder.repeat_type}</div>
+                    </div>
+                    <span className={styles.reminderStatus}>{reminder.status}</span>
+                  </div>
+
+                  <div className={styles.reminderDetails}>
+                    <div className={styles.detailRow}>
+                      <span className={styles.detailLabel}>Notification</span>
+                      <span>{reminder.notification_enabled ? "Enabled" : "Disabled"}</span>
+                    </div>
+                    <div className={styles.detailRow}>
+                      <span className={styles.detailLabel}>Snooze</span>
+                      <span>{reminder.snooze_minutes} min</span>
+                    </div>
+                    <div className={styles.detailRow}>
+                      <span className={styles.detailLabel}>Next Reminder</span>
+                      <span>{reminder.next_trigger_at ? new Date(reminder.next_trigger_at).toLocaleString() : "—"}</span>
+                    </div>
+                  </div>
+
+                  <div className={styles.itemActions}>
+                    <Button variant="outline" onClick={() => handleEdit(reminder)}>
+                      Edit
+                    </Button>
+                    <Button variant="outline" onClick={() => handleSnooze(reminder.id)}>
+                      Snooze
+                    </Button>
+                    <Button variant="outline" onClick={() => handleViewHistory(reminder)}>
+                      View History
+                    </Button>
+                    <Button variant="secondary" onClick={() => handleDelete(reminder.id)}>
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </Card>
       ) : (
         <>

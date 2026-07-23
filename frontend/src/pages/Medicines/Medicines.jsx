@@ -6,6 +6,7 @@ import Input from "../../components/common/Input";
 import EmptyState from "../../components/ui/EmptyState";
 import LoadingSkeleton from "../../components/ui/LoadingSkeleton";
 import {
+  getAllMedicines,
   getMedicinesByTreatment,
   createMedicine,
   updateMedicine,
@@ -51,17 +52,14 @@ const Medicines = ({ treatment }) => {
   const listLoading = loading;
 
   const loadMedicines = async () => {
-    if (!effectiveTreatment?.id) {
-      setMedicines([]);
-      return;
-    }
-
     setLoading(true);
     setMessage({ type: "", text: "" });
 
     try {
-      const response = await getMedicinesByTreatment(effectiveTreatment.id);
-      setMedicines(response);
+      const response = effectiveTreatment?.id
+        ? await getMedicinesByTreatment(effectiveTreatment.id)
+        : await getAllMedicines();
+      setMedicines(response || []);
     } catch (error) {
       console.error(error);
       setMessage({
@@ -74,13 +72,10 @@ const Medicines = ({ treatment }) => {
   };
 
   useEffect(() => {
-    if (isFiltered) {
-      loadMedicines();
-    } else {
-      setForm(initialForm);
-      setEditingId(null);
-    }
-  }, [isFiltered]);
+    loadMedicines();
+    setForm(initialForm);
+    setEditingId(null);
+  }, [effectiveTreatment?.id]);
 
   const resetForm = () => {
     setForm(initialForm);
@@ -122,6 +117,12 @@ const Medicines = ({ treatment }) => {
 
     setSaving(true);
     setMessage({ type: "", text: "" });
+
+    if (!effectiveTreatment?.id) {
+      setMessage({ type: "error", text: "Choose a treatment before creating a medicine." });
+      setSaving(false);
+      return;
+    }
 
     try {
       if (editingId) {
@@ -198,31 +199,6 @@ const Medicines = ({ treatment }) => {
   const clearFilter = () => {
     navigate("/medicines");
   };
-
-  if (!isFiltered) {
-    return (
-      <div className={styles.medicinePage}>
-        <div className={styles.pageHeader}>
-          <div>
-            <h2 className={styles.pageTitle}>Medicines</h2>
-            <p className={styles.pageSubtitle}>
-              Medicines are organized under Treatments. Open a treatment to create and manage medicines.
-            </p>
-          </div>
-        </div>
-
-        <Card className={styles.messageCard}>
-          <EmptyState
-            title="Select a Treatment"
-            message="Medicines are organized under Treatments. Open a treatment to create and manage medicines."
-            action={
-              <Button variant="secondary" onClick={() => navigate("/treatments")}>Browse Treatments</Button>
-            }
-          />
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className={styles.medicinePage}>
@@ -380,7 +356,7 @@ const Medicines = ({ treatment }) => {
               message={
                 isFiltered
                   ? "Add a medicine to manage it for this treatment."
-                  : "No medicines exist yet. Create one by first choosing a treatment."
+                  : "No medicines exist yet. Add one from a treatment to start tracking them."
               }
               action={
                 <Button variant="secondary" onClick={() => navigate("/treatments")}>Browse Treatments</Button>

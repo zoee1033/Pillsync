@@ -22,6 +22,7 @@ from app.schemas.medicine_schema import (
 from app.services.medicine_service import (
     create_medicine,
     get_all_medicines,
+    get_all_user_medicines,
     get_medicine_by_id,
     update_medicine,
     delete_medicine
@@ -52,6 +53,25 @@ def add_medicine(
     return create_medicine(
         db=db,
         medicine=medicine,
+        current_user=current_user
+    )
+
+
+# =====================================================
+# Get All Medicines
+# =====================================================
+
+@router.get(
+    "/",
+    response_model=List[MedicineResponse]
+)
+def fetch_all_medicines(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
+    return get_all_user_medicines(
+        db=db,
         current_user=current_user
     )
 

@@ -23,6 +23,7 @@ from app.schemas.reminder_schema import (
 from app.services.reminder_service import (
     create_reminder,
     get_all_reminders,
+    get_all_user_reminders,
     get_reminder_by_id,
     update_reminder,
     delete_reminder,
@@ -61,6 +62,21 @@ def add_reminder(
 # =====================================================
 # Get All Reminders
 # =====================================================
+
+@router.get(
+    "/",
+    response_model=List[ReminderResponse]
+)
+def fetch_all_reminders(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
+    return get_all_user_reminders(
+        db=db,
+        current_user=current_user
+    )
+
 
 @router.get(
     "/medicine/{medicine_id}",

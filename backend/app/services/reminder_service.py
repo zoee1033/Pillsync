@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.models.medicine import Medicine
 from app.models.reminder import Reminder
+from app.models.treatment import Treatment
 from app.models.user import User
 
 from app.schemas.reminder_schema import (
@@ -17,19 +18,23 @@ from app.schemas.reminder_schema import (
 # Helper Function
 # ==========================================================
 
-def calculate_next_trigger(reminder_time):
+def calculate_next_trigger(reminder_time, repeat_type="Daily", base_datetime=None):
+    now = base_datetime or datetime.now().astimezone()
 
-    now = datetime.now()
+    if now.tzinfo is not None:
+        today_trigger = datetime.combine(now.date(), reminder_time).astimezone(now.tzinfo)
+    else:
+        today_trigger = datetime.combine(now.date(), reminder_time)
 
-    trigger = datetime.combine(
-        now.date(),
-        reminder_time
-    )
+    if today_trigger > now:
+        return today_trigger
 
-    if trigger <= now:
-        trigger += timedelta(days=1)
-
-    return trigger
+    if repeat_type == "Weekly":
+        return today_trigger + timedelta(days=7)
+    elif repeat_type == "Monthly":
+        return today_trigger + timedelta(days=30)
+    else:  # Daily, Custom, or default
+        return today_trigger + timedelta(days=1)
 
 
 # ==========================================================
@@ -70,7 +75,8 @@ def create_reminder(
         notification_enabled=reminder.notification_enabled,
         snooze_minutes=reminder.snooze_minutes,
         next_trigger_at=calculate_next_trigger(
-            reminder.reminder_time
+            reminder.reminder_time,
+            reminder.repeat_type
         ),
         status=reminder.status
     )
@@ -83,7 +89,32 @@ def create_reminder(
 
 
 # ==========================================================
-# Get All Reminders
+# Get All Reminders for the Current User
+# ==========================================================
+
+def get_all_user_reminders(
+    db: Session,
+    current_user: User
+):
+
+    reminders = (
+        db.query(Reminder)
+        .join(Reminder.medicine)
+        .join(Medicine.treatment)
+        .filter(
+            Treatment.user_id == current_user.id
+        )
+        .order_by(
+            Reminder.reminder_time.asc()
+        )
+        .all()
+    )
+
+    return reminders
+
+
+# ==========================================================
+# Get All Reminders for a Medicine
 # ==========================================================
 
 def get_all_reminders(
@@ -184,9 +215,10 @@ def update_reminder(
     for key, value in update_data.items():
         setattr(reminder, key, value)
 
-    if "reminder_time" in update_data:
+    if "reminder_time" in update_data or "repeat_type" in update_data:
         reminder.next_trigger_at = calculate_next_trigger(
-            reminder.reminder_time
+            reminder.reminder_time,
+            reminder.repeat_type
         )
 
     db.commit()

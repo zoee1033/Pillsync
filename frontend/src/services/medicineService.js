@@ -1,5 +1,10 @@
 import api from "./api";
 
+export const getAllMedicines = async () => {
+  const response = await api.get("/medicines");
+  return response.data;
+};
+
 export const getMedicinesByTreatment = async (treatmentId) => {
   const response = await api.get(`/medicines/treatment/${treatmentId}`);
   return response.data;

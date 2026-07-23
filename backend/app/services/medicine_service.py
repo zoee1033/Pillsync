@@ -54,6 +54,30 @@ def create_medicine(
 
 
 # ==========================================================
+# Get All Medicines for the Current User
+# ==========================================================
+
+def get_all_user_medicines(
+    db: Session,
+    current_user: User
+):
+
+    medicines = (
+        db.query(Medicine)
+        .join(Medicine.treatment)
+        .filter(
+            Treatment.user_id == current_user.id
+        )
+        .order_by(
+            Medicine.created_at.desc()
+        )
+        .all()
+    )
+
+    return medicines
+
+
+# ==========================================================
 # Get All Medicines of a Treatment
 # ==========================================================
 

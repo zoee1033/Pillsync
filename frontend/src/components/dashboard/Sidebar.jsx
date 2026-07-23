@@ -10,6 +10,7 @@ import {
   TbPill,
   TbCalendarTime,
   TbClock,
+  TbBell,
 } from "react-icons/tb";
 import Logo from "../common/Logo";
 import styles from "./Sidebar.module.css";
@@ -24,6 +25,7 @@ const Sidebar = ({ user, isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileO
     { path: "/treatments", label: "Treatments", icon: <TbPill size={22} /> },
     { path: "/medicines", label: "Medicines", icon: <TbPill size={22} /> },
     { path: "/reminders", label: "Reminders", icon: <TbCalendarTime size={22} /> },
+    { path: "/notifications", label: "Notifications", icon: <TbBell size={22} /> },
     { path: "/history", label: "History", icon: <TbClock size={22} /> },
     { path: "/settings", label: "Settings", icon: <TbSettings size={22} /> },
   ];

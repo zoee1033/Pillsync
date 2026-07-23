@@ -170,11 +170,11 @@ const History = () => {
                 <div className={styles.historyDetails}>
                   <div className={styles.detailRow}>
                     <span className={styles.detailLabel}>Medicine</span>
-                    <span>{medicine.medicine_name}</span>
+                    <span>{selectedMedicine?.medicine_name || `Medicine #${item.medicine_id}`}</span>
                   </div>
                   <div className={styles.detailRow}>
                     <span className={styles.detailLabel}>Reminder Time</span>
-                    <span>{reminder.reminder_time}</span>
+                    <span>{selectedReminder?.reminder_time || `Reminder #${item.reminder_id}`}</span>
                   </div>
                   <div className={styles.detailRow}>
                     <span className={styles.detailLabel}>Date</span>
