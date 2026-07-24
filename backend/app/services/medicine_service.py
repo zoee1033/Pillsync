@@ -1,6 +1,9 @@
+from datetime import datetime
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
+from app.models.enums import HistoryStatus
+from app.models.history import History
 from app.models.medicine import Medicine
 from app.models.treatment import Treatment
 from app.models.user import User
@@ -9,6 +12,7 @@ from app.schemas.medicine_schema import (
     MedicineCreate,
     MedicineUpdate
 )
+from app.services.history_service import is_duplicate_history
 
 
 # ==========================================================
@@ -171,6 +175,37 @@ def update_medicine(
 
     db.commit()
     db.refresh(medicine)
+
+    if not medicine.is_active or medicine.quantity <= 0:
+        user_id = medicine.treatment.user_id
+        if not is_duplicate_history(db, user_id, medicine.treatment_id, HistoryStatus.MEDICINE_COMPLETED.value, medicine.id):
+            hist = History(
+                user_id=user_id,
+                treatment_id=medicine.treatment_id,
+                medicine_id=medicine.id,
+                scheduled_time=datetime.utcnow(),
+                action_time=datetime.utcnow(),
+                status=HistoryStatus.MEDICINE_COMPLETED.value,
+                notes=f"Medicine '{medicine.medicine_name}' course completed."
+            )
+            db.add(hist)
+            db.commit()
+
+        # Check if ALL medicines in treatment are completed
+        all_meds = db.query(Medicine).filter(Medicine.treatment_id == medicine.treatment_id).all()
+        if all(not m.is_active or m.quantity <= 0 for m in all_meds):
+            if not is_duplicate_history(db, user_id, medicine.treatment_id, HistoryStatus.COMPLETED.value):
+                t_hist = History(
+                    user_id=user_id,
+                    treatment_id=medicine.treatment_id,
+                    scheduled_time=datetime.utcnow(),
+                    action_time=datetime.utcnow(),
+                    status=HistoryStatus.COMPLETED.value,
+                    notes=f"All medicines completed for treatment '{medicine.treatment.disease_name}'."
+                )
+                db.add(t_hist)
+                medicine.treatment.status = HistoryStatus.COMPLETED.value
+                db.commit()
 
     return medicine
 

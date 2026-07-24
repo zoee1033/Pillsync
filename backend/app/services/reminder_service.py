@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.models.history import History
 from app.models.medicine import Medicine
 from app.models.reminder import Reminder
 from app.models.treatment import Treatment
@@ -22,7 +23,7 @@ def calculate_next_trigger(reminder_time, repeat_type="Daily", base_datetime=Non
     now = base_datetime or datetime.now().astimezone()
 
     if now.tzinfo is not None:
-        today_trigger = datetime.combine(now.date(), reminder_time).astimezone(now.tzinfo)
+        today_trigger = datetime.combine(now.date(), reminder_time).replace(tzinfo=now.tzinfo)
     else:
         today_trigger = datetime.combine(now.date(), reminder_time)
 
@@ -268,10 +269,20 @@ def snooze_reminder(
         current_user
     )
 
-    reminder.next_trigger_at = (
-        datetime.now() +
-        timedelta(minutes=minutes)
+    now = datetime.utcnow()
+    reminder.next_trigger_at = now + timedelta(minutes=minutes)
+
+    history_entry = History(
+        user_id=reminder.medicine.treatment.user_id,
+        treatment_id=reminder.medicine.treatment_id,
+        medicine_id=reminder.medicine_id,
+        reminder_id=reminder.id,
+        scheduled_time=now,
+        action_time=now,
+        status="Snoozed",
+        notes=f"Snoozed for {minutes} minutes"
     )
+    db.add(history_entry)
 
     db.commit()
     db.refresh(reminder)

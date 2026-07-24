@@ -5,6 +5,11 @@ export const getAllReminders = async () => {
   return response.data;
 };
 
+export const getReminderById = async (reminderId) => {
+  const response = await api.get(`/reminders/${reminderId}`);
+  return response.data;
+};
+
 export const getRemindersByMedicine = async (medicineId) => {
   const response = await api.get(`/reminders/medicine/${medicineId}`);
   return response.data;

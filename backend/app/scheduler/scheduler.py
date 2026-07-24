@@ -17,4 +17,4 @@ def start_scheduler():
 
     scheduler.start()
 
-    print("Scheduler Started")
+    print("⏰ APScheduler initialized and started successfully", flush=True)

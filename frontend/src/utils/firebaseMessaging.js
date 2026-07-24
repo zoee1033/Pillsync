@@ -55,8 +55,12 @@ export const initializeFirebaseMessaging = async () => {
     const token = await getMessagingToken(messaging, tokenOptions);
 
     if (token) {
+      const userStr = localStorage.getItem("user");
+      const currentUserId = userStr ? JSON.parse(userStr)?.id : null;
       const existingToken = localStorage.getItem("fcm_token");
-      if (existingToken !== token) {
+      const registeredUser = localStorage.getItem("fcm_token_user_id");
+
+      if (existingToken !== token || (currentUserId && registeredUser !== String(currentUserId))) {
         const { browser, platform } = getBrowserInfo();
         await registerDeviceToken({
           fcm_token: token,
@@ -66,6 +70,9 @@ export const initializeFirebaseMessaging = async () => {
           is_active: true,
         });
         localStorage.setItem("fcm_token", token);
+        if (currentUserId) {
+          localStorage.setItem("fcm_token_user_id", String(currentUserId));
+        }
       }
     }
   } catch (error) {
@@ -73,13 +80,14 @@ export const initializeFirebaseMessaging = async () => {
   }
 
   onMessage(messaging, (payload) => {
-    const title = payload?.notification?.title || "Pill Reminder";
-    const body = payload?.notification?.body || "You have a medication reminder.";
+    const title = payload?.notification?.title || payload?.data?.title || "💊 Pill Reminder";
+    const body = payload?.notification?.body || payload?.data?.body || "You have a medication reminder.";
 
     if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
       new Notification(title, {
         body,
         icon: "/favicon.ico",
+        badge: "/favicon.ico",
       });
     }
   });

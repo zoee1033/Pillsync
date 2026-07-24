@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
@@ -10,6 +10,7 @@ import {
   markSkipped,
   markMissed,
 } from "../../services/historyService";
+import { STATUS_META, HISTORY_STATUS } from "../../constants/status";
 import styles from "./History.module.css";
 
 const History = () => {
@@ -23,7 +24,7 @@ const History = () => {
   const [selectedMedicine, setSelectedMedicine] = useState(null);
   const [selectedTreatment, setSelectedTreatment] = useState(null);
 
-  const loadHistory = async (reminderId) => {
+  const loadHistory = useCallback(async (reminderId) => {
     setLoading(true);
     setMessage({ type: "", text: "" });
     try {
@@ -36,12 +37,12 @@ const History = () => {
       console.error(error);
       setMessage({
         type: "error",
-        text: error.response?.data?.detail || "Unable to load history.",
+        text: error.response?.data?.detail || "Unable to load treatment history.",
       });
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -53,7 +54,16 @@ const History = () => {
     setSelectedTreatment(state.treatment || null);
 
     loadHistory(reminderId);
-  }, [location.search, location.state]);
+
+    const handleGlobalRefresh = () => {
+      loadHistory(reminderId);
+    };
+
+    window.addEventListener("pillsync_refresh_ui", handleGlobalRefresh);
+    return () => {
+      window.removeEventListener("pillsync_refresh_ui", handleGlobalRefresh);
+    };
+  }, [location.search, location.state, loadHistory]);
 
   const handleUpdateStatus = async (historyId, action, reason) => {
     setActionLoading(true);
@@ -98,11 +108,11 @@ const History = () => {
 
       <div className={styles.pageHeader}>
         <div>
-          <h2 className={styles.pageTitle}>History</h2>
+          <h2 className={styles.pageTitle}>Treatment History</h2>
           <p className={styles.pageSubtitle}>
             {selectedMedicine?.medicine_name && selectedReminder?.reminder_time
               ? `View recorded actions for ${selectedMedicine.medicine_name} / ${selectedReminder.reminder_time}.`
-              : "View all recorded history."}
+              : "View complete treatment history timeline and milestones."}
           </p>
         </div>
       </div>
@@ -111,7 +121,7 @@ const History = () => {
         <div className={styles.detailsGrid}>
           <Card className={styles.detailCard}>
             <div className={styles.cardHeader}>
-              <h3>Reminder</h3>
+              <h3>Reminder Overview</h3>
             </div>
             <div className={styles.detailRow}>
               <span className={styles.detailLabel}>Medicine</span>
@@ -129,17 +139,13 @@ const History = () => {
               <span className={styles.detailLabel}>Status</span>
               <span>{selectedReminder?.status || "—"}</span>
             </div>
-            <div className={styles.detailRow}>
-              <span className={styles.detailLabel}>Next Reminder</span>
-              <span>{selectedReminder?.next_trigger_at ? new Date(selectedReminder.next_trigger_at).toLocaleString() : "—"}</span>
-            </div>
           </Card>
         </div>
       ) : null}
 
       <Card className={styles.listCard}>
         <div className={styles.cardHeader}>
-          <h3>History Records</h3>
+          <h3>History Timeline</h3>
         </div>
 
         {message.text && (
@@ -153,58 +159,122 @@ const History = () => {
         ) : historyItems.length === 0 ? (
           <EmptyState
             title="No history yet"
-            message="This reminder has no recorded history yet."
+            message="No treatment history or actions recorded yet."
           />
         ) : (
           <div className={styles.historyList}>
-            {historyItems.map((item) => (
-              <div key={item.id} className={styles.historyItem}>
-                <div className={styles.historyHeader}>
-                  <div>
-                    <div className={styles.historyDate}>{new Date(item.scheduled_time).toLocaleDateString()}</div>
-                    <div className={styles.historyMeta}>Action: {item.status}</div>
-                  </div>
-                  <span className={styles.historyStatus}>{item.status}</span>
-                </div>
+            {historyItems.map((item) => {
+              const meta = STATUS_META[item.status] || {
+                label: item.status,
+                icon: "📌",
+                className: "statusDefault",
+              };
 
-                <div className={styles.historyDetails}>
-                  <div className={styles.detailRow}>
-                    <span className={styles.detailLabel}>Medicine</span>
-                    <span>{selectedMedicine?.medicine_name || `Medicine #${item.medicine_id}`}</span>
+              const medName = item.medicine_name || selectedMedicine?.medicine_name || (item.medicine_id ? `Medicine #${item.medicine_id}` : null);
+              const treatName = item.treatment_name || selectedTreatment?.disease_name || `Treatment #${item.treatment_id}`;
+              const remTime = item.reminder_time || selectedReminder?.reminder_time;
+
+              const isUserAction = [
+                HISTORY_STATUS.TAKEN,
+                HISTORY_STATUS.SKIPPED,
+                HISTORY_STATUS.MISSED,
+                HISTORY_STATUS.SNOOZED,
+              ].includes(item.status);
+
+              return (
+                <div key={item.id} className={styles.historyItem}>
+                  <div className={styles.historyHeader}>
+                    <div className={styles.headerLeft}>
+                      <span className={styles.statusIcon}>{meta.icon}</span>
+                      <div>
+                        <div className={styles.historyTitle}>
+                          {medName ? `${medName}` : treatName}
+                        </div>
+                        <div className={styles.historySub}>Treatment: {treatName}</div>
+                      </div>
+                    </div>
+                    <span className={`${styles.statusBadge} ${styles[meta.className] || ""}`}>
+                      {meta.label}
+                    </span>
                   </div>
-                  <div className={styles.detailRow}>
-                    <span className={styles.detailLabel}>Reminder Time</span>
-                    <span>{selectedReminder?.reminder_time || `Reminder #${item.reminder_id}`}</span>
-                  </div>
-                  <div className={styles.detailRow}>
-                    <span className={styles.detailLabel}>Date</span>
-                    <span>{new Date(item.scheduled_time).toLocaleDateString()}</span>
-                  </div>
-                  <div className={styles.detailRow}>
-                    <span className={styles.detailLabel}>Timestamp</span>
-                    <span>{new Date(item.action_time).toLocaleString()}</span>
-                  </div>
-                  {item.notes && (
+
+                  <div className={styles.historyDetails}>
+                    {medName && (
+                      <div className={styles.detailRow}>
+                        <span className={styles.detailLabel}>Medicine:</span>
+                        <span>{medName}</span>
+                      </div>
+                    )}
+                    {item.dosage && (
+                      <div className={styles.detailRow}>
+                        <span className={styles.detailLabel}>Dosage:</span>
+                        <span>{item.dosage}</span>
+                      </div>
+                    )}
+                    {remTime && (
+                      <div className={styles.detailRow}>
+                        <span className={styles.detailLabel}>Reminder Time:</span>
+                        <span>{remTime}</span>
+                      </div>
+                    )}
+                    {item.start_date && (
+                      <div className={styles.detailRow}>
+                        <span className={styles.detailLabel}>Start Date:</span>
+                        <span>{item.start_date}</span>
+                      </div>
+                    )}
+                    {item.end_date && (
+                      <div className={styles.detailRow}>
+                        <span className={styles.detailLabel}>End Date:</span>
+                        <span>{item.end_date}</span>
+                      </div>
+                    )}
+                    {item.completion_date && (
+                      <div className={styles.detailRow}>
+                        <span className={styles.detailLabel}>Completion Date:</span>
+                        <span>{item.completion_date}</span>
+                      </div>
+                    )}
+                    {item.duration && (
+                      <div className={styles.detailRow}>
+                        <span className={styles.detailLabel}>Duration:</span>
+                        <span>{item.duration}</span>
+                      </div>
+                    )}
                     <div className={styles.detailRow}>
-                      <span className={styles.detailLabel}>Notes</span>
-                      <span>{item.notes}</span>
+                      <span className={styles.detailLabel}>Event Timestamp:</span>
+                      <span>{item.action_time ? new Date(item.action_time).toLocaleString() : "—"}</span>
+                    </div>
+                    {item.skip_reason && (
+                      <div className={styles.detailRow}>
+                        <span className={styles.detailLabel}>Skip Reason:</span>
+                        <span>{item.skip_reason}</span>
+                      </div>
+                    )}
+                    {item.notes && (
+                      <div className={styles.detailRow}>
+                        <span className={styles.detailLabel}>Notes:</span>
+                        <span>{item.notes}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {isUserAction && item.medicine_id && item.reminder_id && (
+                    <div className={styles.itemActions}>
+                      <Button variant="outline" onClick={() => handleUpdateStatus(item.id, "taken")} disabled={actionLoading}>
+                        Mark Taken
+                      </Button>
+                      <Button variant="secondary" onClick={() => handleSkip(item.id)} disabled={actionLoading}>
+                        Mark Skipped
+                      </Button>
+                      <Button variant="outline" onClick={() => handleUpdateStatus(item.id, "missed")} disabled={actionLoading}>
+                        Mark Missed
+                      </Button>
                     </div>
                   )}
                 </div>
-
-                <div className={styles.itemActions}>
-                  <Button variant="outline" onClick={() => handleUpdateStatus(item.id, "taken")} disabled={actionLoading}>
-                    Taken
-                  </Button>
-                  <Button variant="secondary" onClick={() => handleSkip(item.id)} disabled={actionLoading}>
-                    Skipped
-                  </Button>
-                  <Button variant="outline" onClick={() => handleUpdateStatus(item.id, "missed")} disabled={actionLoading}>
-                    Missed
-                  </Button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </Card>

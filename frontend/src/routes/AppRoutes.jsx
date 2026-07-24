@@ -3,6 +3,7 @@ import {
   BrowserRouter as Router,
   Routes,
   Route,
+  useSearchParams,
 } from "react-router-dom";
 
 import Landing from "../pages/Landing/Landing";
@@ -19,10 +20,36 @@ import Notifications from "../pages/Notifications/Notifications";
 
 import ProtectedRoute from "./ProtectedRoute";
 import DashboardLayout from "../components/dashboard/DashboardLayout";
+import NotificationDetailsModal from "../components/notifications/NotificationDetailsModal";
+
+const NotificationModalContainer = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const reminderId = searchParams.get("open_reminder_id");
+
+  if (!reminderId) return null;
+
+  const handleClose = () => {
+    searchParams.delete("open_reminder_id");
+    setSearchParams(searchParams, { replace: true });
+  };
+
+  const handleRefresh = () => {
+    window.dispatchEvent(new Event("pillsync_refresh_ui"));
+  };
+
+  return (
+    <NotificationDetailsModal
+      reminderId={reminderId}
+      onClose={handleClose}
+      onRefresh={handleRefresh}
+    />
+  );
+};
 
 const AppRoutes = () => {
   return (
     <Router>
+      <NotificationModalContainer />
       <Routes>
 
         {/* Public Routes */}

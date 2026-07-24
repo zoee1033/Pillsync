@@ -1,12 +1,16 @@
+from datetime import datetime
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
+from app.models.enums import HistoryStatus
+from app.models.history import History
 from app.models.treatment import Treatment
 from app.models.user import User
 from app.schemas.treatment_schema import (
     TreatmentCreate,
     TreatmentUpdate
 )
+from app.services.history_service import is_duplicate_history
 
 
 # ==========================================
@@ -33,6 +37,19 @@ def create_treatment(
     db.add(new_treatment)
     db.commit()
     db.refresh(new_treatment)
+
+    if new_treatment.status == HistoryStatus.COMPLETED.value:
+        if not is_duplicate_history(db, current_user.id, new_treatment.id, HistoryStatus.COMPLETED.value):
+            hist = History(
+                user_id=current_user.id,
+                treatment_id=new_treatment.id,
+                scheduled_time=datetime.utcnow(),
+                action_time=datetime.utcnow(),
+                status=HistoryStatus.COMPLETED.value,
+                notes="Treatment completed."
+            )
+            db.add(hist)
+            db.commit()
 
     return new_treatment
 
@@ -109,6 +126,31 @@ def update_treatment(
     db.commit()
     db.refresh(treatment)
 
+    if treatment.status == HistoryStatus.COMPLETED.value:
+        if not is_duplicate_history(db, current_user.id, treatment.id, HistoryStatus.COMPLETED.value):
+            hist = History(
+                user_id=current_user.id,
+                treatment_id=treatment.id,
+                scheduled_time=datetime.utcnow(),
+                action_time=datetime.utcnow(),
+                status=HistoryStatus.COMPLETED.value,
+                notes="Treatment completed."
+            )
+            db.add(hist)
+            db.commit()
+    elif treatment.status == HistoryStatus.CANCELLED.value:
+        if not is_duplicate_history(db, current_user.id, treatment.id, HistoryStatus.CANCELLED.value):
+            hist = History(
+                user_id=current_user.id,
+                treatment_id=treatment.id,
+                scheduled_time=datetime.utcnow(),
+                action_time=datetime.utcnow(),
+                status=HistoryStatus.CANCELLED.value,
+                notes="Treatment cancelled."
+            )
+            db.add(hist)
+            db.commit()
+
     return treatment
 
 
@@ -127,6 +169,18 @@ def delete_treatment(
         db,
         current_user
     )
+
+    if not is_duplicate_history(db, current_user.id, treatment.id, HistoryStatus.CANCELLED.value):
+        hist = History(
+            user_id=current_user.id,
+            treatment_id=treatment.id,
+            scheduled_time=datetime.utcnow(),
+            action_time=datetime.utcnow(),
+            status=HistoryStatus.CANCELLED.value,
+            notes=f"Treatment '{treatment.disease_name}' cancelled/deleted."
+        )
+        db.add(hist)
+        db.commit()
 
     db.delete(treatment)
     db.commit()

@@ -1,0 +1,220 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modalContent {
+  background: #ffffff;
+  width: 90%;
+  max-width: 480px;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  animation: slideUp 0.25s ease-out;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--color-border, #E2E8F0);
+  padding-bottom: 14px;
+}
+
+.modalHeader h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-text-dark, #1A202C);
+  margin: 0;
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  font-size: 26px;
+  color: var(--color-text-gray, #718096);
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 4px;
+}
+
+.closeBtn:hover {
+  color: #1A202C;
+}
+
+.loadingContainer,
+.unavailableContainer {
+  padding: 30px 20px;
+  text-align: center;
+  font-size: 15px;
+  color: var(--color-text-gray, #718096);
+}
+
+.unavailableIcon {
+  font-size: 40px;
+  margin-bottom: 12px;
+}
+
+.unavailableText {
+  font-size: 16px;
+  font-weight: 600;
+  color: #C53030;
+  margin-bottom: 18px;
+}
+
+.okBtn {
+  margin-top: 10px;
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.medicineBanner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: linear-gradient(135deg, #EBF8FF 0%, #E6FFFA 100%);
+  padding: 16px;
+  border-radius: 14px;
+}
+
+.medIcon {
+  font-size: 36px;
+}
+
+.medName {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2B6CB0;
+  margin: 0 0 4px 0;
+}
+
+.treatmentName {
+  font-size: 13px;
+  color: #4A5568;
+  margin: 0;
+}
+
+.detailsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #F7FAFC;
+  padding: 16px;
+  border-radius: 12px;
+}
+
+.detailRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.detailRowFull {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+  margin-top: 6px;
+  border-top: 1px dashed #E2E8F0;
+  padding-top: 8px;
+}
+
+.detailLabel {
+  font-weight: 600;
+  color: #718096;
+}
+
+.detailValue {
+  font-weight: 600;
+  color: #2D3748;
+}
+
+.statusBadge {
+  background-color: #E2E8F0;
+  color: #2D3748;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.actionBtn {
+  flex: 1;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btnTaken {
+  background-color: #38A169;
+  color: #ffffff;
+}
+
+.btnTaken:hover {
+  background-color: #2F855A;
+}
+
+.btnSnooze {
+  background-color: #3182CE;
+  color: #ffffff;
+}
+
+.btnSnooze:hover {
+  background-color: #2B6CB0;
+}
+
+.btnSkip {
+  background-color: #ED8936;
+  color: #ffffff;
+}
+
+.btnSkip:hover {
+  background-color: #DD6B20;
+}
+
+.actionBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}

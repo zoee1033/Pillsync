@@ -30,13 +30,13 @@ def process_due_reminders(db):
         .all()
     )
 
-    print(f"Found {len(reminders)} due reminder(s) at {now}")
+    print(f"⏰ Scheduler checking due reminders at {now}. Found {len(reminders)} due reminder(s).", flush=True)
 
     for reminder in reminders:
         try:
             dispatch_reminder(db, reminder)
         except Exception as e:
-            print(f"Error dispatching reminder ID {reminder.id}: {e}")
+            print(f"Error dispatching reminder ID {reminder.id}: {e}", flush=True)
 
         try:
             reminder.last_triggered_at = now
@@ -47,7 +47,7 @@ def process_due_reminders(db):
             )
             db.commit()
             db.refresh(reminder)
-            print(f"Reminder ID {reminder.id} updated: next_trigger_at = {reminder.next_trigger_at}")
+            print(f"Reminder ID {reminder.id} updated: next_trigger_at = {reminder.next_trigger_at}", flush=True)
         except Exception as e:
             db.rollback()
-            print(f"Error updating reminder ID {reminder.id} trigger timestamp: {e}")
+            print(f"Error updating reminder ID {reminder.id} trigger timestamp: {e}", flush=True)

@@ -54,7 +54,7 @@ class History(Base):
             "medicines.id",
             ondelete="CASCADE"
         ),
-        nullable=False
+        nullable=True
     )
 
     reminder_id = Column(
@@ -63,7 +63,7 @@ class History(Base):
             "reminders.id",
             ondelete="CASCADE"
         ),
-        nullable=False
+        nullable=True
     )
 
     # =====================================
@@ -81,7 +81,7 @@ class History(Base):
     )
 
     status = Column(
-        String(20),
+        String(50),
         nullable=False
     )
 

@@ -1,3 +1,9 @@
+import sys
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from types import SimpleNamespace
 
 from app.models.device_token import DeviceToken
@@ -16,6 +22,12 @@ class FakeDB:
 
     def filter(self, *args, **kwargs):
         return self
+
+    def order_by(self, *args, **kwargs):
+        return self
+
+    def all(self):
+        return [SimpleNamespace(id=7, fcm_token="abc1234567890123456")]
 
     def first(self):
         if self.queries[-1] is DeviceToken:
@@ -67,3 +79,13 @@ def test_dispatch_reminder_creates_and_marks_notification(monkeypatch):
     assert created["notification"].reminder_id == 11
     assert created["user"].id == 7
     assert marked["notification_id"] == 42
+
+
+class MonkeyPatch:
+    def setattr(self, obj, name, value):
+        setattr(obj, name, value)
+
+
+if __name__ == "__main__":
+    test_dispatch_reminder_creates_and_marks_notification(MonkeyPatch())
+    print("✓ Dispatcher test passed.")

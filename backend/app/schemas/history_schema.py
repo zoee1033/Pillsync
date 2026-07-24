@@ -1,11 +1,14 @@
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional
 
 from pydantic import (
     BaseModel,
     Field,
-    field_validator
+    field_validator,
+    model_validator
 )
+
+from app.models.enums import HistoryStatus
 
 
 # =====================================================
@@ -18,7 +21,7 @@ class HistoryBase(BaseModel):
 
     status: str = Field(
         ...,
-        description="Taken | Skipped | Missed | Snoozed"
+        description="Completed | Medicine Completed | Expired | Cancelled | Taken | Skipped | Missed | Snoozed"
     )
 
     skip_reason: Optional[str] = None
@@ -29,12 +32,7 @@ class HistoryBase(BaseModel):
     @classmethod
     def validate_status(cls, value):
 
-        allowed = [
-            "Taken",
-            "Skipped",
-            "Missed",
-            "Snoozed"
-        ]
+        allowed = [s.value for s in HistoryStatus]
 
         if value not in allowed:
             raise ValueError(
@@ -52,9 +50,24 @@ class HistoryCreate(HistoryBase):
 
     treatment_id: int
 
-    medicine_id: int
+    medicine_id: Optional[int] = None
 
-    reminder_id: int
+    reminder_id: Optional[int] = None
+
+    @model_validator(mode="after")
+    def validate_user_action_fields(self):
+        user_actions = [
+            HistoryStatus.TAKEN.value,
+            HistoryStatus.SKIPPED.value,
+            HistoryStatus.MISSED.value,
+            HistoryStatus.SNOOZED.value,
+        ]
+        if self.status in user_actions:
+            if not self.medicine_id or not self.reminder_id:
+                raise ValueError(
+                    f"Status '{self.status}' requires medicine_id and reminder_id."
+                )
+        return self
 
 
 # =====================================================
@@ -76,12 +89,7 @@ class HistoryUpdate(BaseModel):
         if value is None:
             return value
 
-        allowed = [
-            "Taken",
-            "Skipped",
-            "Missed",
-            "Snoozed"
-        ]
+        allowed = [s.value for s in HistoryStatus]
 
         if value not in allowed:
             raise ValueError(
@@ -103,9 +111,25 @@ class HistoryResponse(HistoryBase):
 
     treatment_id: int
 
-    medicine_id: int
+    medicine_id: Optional[int] = None
 
-    reminder_id: int
+    reminder_id: Optional[int] = None
+
+    medicine_name: Optional[str] = None
+
+    treatment_name: Optional[str] = None
+
+    dosage: Optional[str] = None
+
+    reminder_time: Optional[str] = None
+
+    start_date: Optional[date] = None
+
+    end_date: Optional[date] = None
+
+    completion_date: Optional[date] = None
+
+    duration: Optional[str] = None
 
     action_time: datetime
 

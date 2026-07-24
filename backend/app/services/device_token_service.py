@@ -22,6 +22,19 @@ def register_device_token(
     current_user: User
 ):
 
+    same_device_tokens = (
+        db.query(DeviceToken)
+        .filter(
+            DeviceToken.user_id == current_user.id,
+            DeviceToken.browser == token_data.browser,
+            DeviceToken.fcm_token != token_data.fcm_token,
+            DeviceToken.is_active == True
+        )
+        .all()
+    )
+    for old_tok in same_device_tokens:
+        old_tok.is_active = False
+
     existing_token = (
         db.query(DeviceToken)
         .filter(

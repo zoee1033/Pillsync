@@ -14,11 +14,33 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
-  const title = payload.notification?.title || 'Pill Reminder';
+  const title = payload.notification?.title || payload.data?.title || '💊 Pill Reminder';
   const options = {
-    body: payload.notification?.body || 'You have a medication reminder.',
+    body: payload.notification?.body || payload.data?.body || 'You have a medication reminder.',
     icon: '/favicon.ico',
+    badge: '/favicon.ico',
+    data: payload.data || {},
   };
 
   return self.registration.showNotification(title, options);
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const reminderId = event.notification.data?.reminder_id;
+  const targetUrl = reminderId ? `/?open_reminder_id=${reminderId}` : '/';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url && 'focus' in client) {
+          client.navigate(targetUrl);
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow(targetUrl);
+      }
+    })
+  );
 });
