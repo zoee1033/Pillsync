@@ -27,3 +27,7 @@ Thumbs.db
 build/
 dist/
 *.egg-info/
+
+# Firebase Service Account
+**/serviceAccountKey.json
+app/firebase/__pycache__/

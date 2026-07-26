@@ -1,14 +1,21 @@
 import React, { useState, useEffect } from "react";
-import DashboardLayout from "../../components/dashboard/DashboardLayout";
+import useAuth from "../../hooks/useAuth";
 import Card from "../../components/common/Card";
 import Input from "../../components/common/Input";
 import Button from "../../components/common/Button";
 import styles from "./Profile.module.css";
-import { updateProfile, changePassword } from "../../services/profileService";
-import { TbUserEdit, TbLock, TbShieldCheck } from "react-icons/tb";
+import { getProfile, updateProfile, changePassword } from "../../services/profileService";
+import { TbUserEdit, TbLock } from "react-icons/tb";
 
-const ProfileContent = ({ user, onUserUpdate }) => {
-  const currentUser = user || {
+const ProfileContent = ({ user: propUser, onUserUpdate }) => {
+  const auth = useAuth();
+  const contextUser = auth?.user;
+  const contextUpdateUser = auth?.updateUser;
+
+  const [profileUser, setProfileUser] = useState(propUser || contextUser || null);
+  const [loadingProfile, setLoadingProfile] = useState(!propUser && !contextUser);
+
+  const currentUser = profileUser || {
     full_name: "Health User",
     role: "patient",
     email: "user@example.com",
@@ -23,15 +30,50 @@ const ProfileContent = ({ user, onUserUpdate }) => {
     phone: currentUser.phone || "",
   });
 
-  // Synchronize state when user details load
+  // Fetch the profile once if no user data is available.
   useEffect(() => {
-    if (user) {
-      setProfileData({
-        fullName: user.full_name || "",
-        phone: user.phone || "",
-      });
+    const initProfile = async () => {
+      if (profileUser) {
+        return;
+      }
+
+      setLoadingProfile(true);
+      try {
+        const response = await getProfile();
+        if (response && response.data) {
+          setProfileUser(response.data);
+          setProfileData({
+            fullName: response.data.full_name || "",
+            phone: response.data.phone || "",
+          });
+          const updater = onUserUpdate || contextUpdateUser;
+          if (updater) {
+            updater(response.data);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load profile:", error);
+      } finally {
+        setLoadingProfile(false);
+      }
+    };
+
+    initProfile();
+  }, [profileUser, onUserUpdate, contextUpdateUser]);
+
+  // Synchronize state when the authenticated user changes.
+  useEffect(() => {
+    const activeUser = propUser || contextUser || profileUser;
+    if (!activeUser) {
+      return;
     }
-  }, [user]);
+
+    setProfileUser(activeUser);
+    setProfileData({
+      fullName: activeUser.full_name || "",
+      phone: activeUser.phone || "",
+    });
+  }, [propUser, contextUser]);
 
   const [isEditing, setIsEditing] = useState(false);
   const [profileStatus, setProfileStatus] = useState({ type: "", message: "" });
@@ -111,7 +153,17 @@ const ProfileContent = ({ user, onUserUpdate }) => {
       });
 
       if (response && response.data) {
-        onUserUpdate(response.data);
+        setProfileUser(response.data);
+        setProfileData({
+          fullName: response.data.full_name || "",
+          phone: response.data.phone || "",
+        });
+
+        const updater = onUserUpdate || contextUpdateUser;
+        if (updater) {
+          updater(response.data);
+        }
+
         setProfileStatus({ type: "success", message: "Profile updated successfully." });
         setIsEditing(false);
       }
@@ -412,12 +464,4 @@ const ProfileContent = ({ user, onUserUpdate }) => {
   );
 };
 
-const Profile = ({ user, onUserUpdate }) => {
-  return (
-    <DashboardLayout>
-      <ProfileContent user={user} onUserUpdate={onUserUpdate} />
-    </DashboardLayout>
-  );
-};
-
-export default Profile;
+export default ProfileContent;

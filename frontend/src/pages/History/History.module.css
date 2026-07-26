@@ -1,0 +1,186 @@
+.historyPage {
+  min-height: 100%;
+}
+
+.controlsRow {
+  margin-bottom: 24px;
+}
+
+.pageHeader {
+  margin-bottom: 18px;
+}
+
+.pageTitle {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-text-dark);
+}
+
+.pageSubtitle {
+  margin-top: 8px;
+  color: var(--color-text-gray);
+  font-size: 14px;
+}
+
+.detailsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+.detailCard,
+.listCard {
+  padding: 28px;
+  box-shadow: var(--shadow-soft);
+  border-radius: var(--radius-card);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.detailRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: var(--color-text-dark);
+}
+
+.detailLabel {
+  color: var(--color-text-gray);
+  font-weight: 600;
+}
+
+.historyList {
+  display: grid;
+  gap: 18px;
+}
+
+.historyItem {
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  padding: 20px;
+  background: #fff;
+  display: grid;
+  gap: 16px;
+}
+
+.historyHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.statusIcon {
+  font-size: 24px;
+}
+
+.historyTitle {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--color-text-dark);
+}
+
+.historySub {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--color-text-gray);
+}
+
+.statusBadge {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.statusCompleted {
+  background-color: rgba(56, 161, 105, 0.15);
+  color: #276749;
+}
+
+.statusMedicineCompleted {
+  background-color: rgba(128, 90, 213, 0.15);
+  color: #553C9A;
+}
+
+.statusExpired {
+  background-color: rgba(229, 62, 62, 0.15);
+  color: #9B2C2C;
+}
+
+.statusCancelled {
+  background-color: rgba(160, 174, 192, 0.2);
+  color: #4A5568;
+}
+
+.statusTaken {
+  background-color: rgba(72, 187, 120, 0.15);
+  color: #2F855A;
+}
+
+.statusSkipped {
+  background-color: rgba(237, 137, 54, 0.15);
+  color: #DD6B20;
+}
+
+.statusMissed {
+  background-color: rgba(245, 101, 101, 0.15);
+  color: #E53E3E;
+}
+
+.statusSnoozed {
+  background-color: rgba(66, 153, 225, 0.15);
+  color: #3182CE;
+}
+
+.historyDetails {
+  display: grid;
+  gap: 10px;
+}
+
+.itemActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.alert {
+  margin-bottom: 20px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  font-size: 14px;
+}
+
+.alertSuccess {
+  background-color: #E6FFFA;
+  color: #2F855A;
+  border: 1px solid #C6F6D5;
+}
+
+.alertError {
+  background-color: #FFF5F5;
+  color: #C53030;
+  border: 1px solid #FED7D7;
+}
+
+@media (max-width: 1024px) {
+  .detailsGrid {
+    grid-template-columns: 1fr;
+  }
+}

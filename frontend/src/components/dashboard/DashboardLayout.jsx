@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
+import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
 import styles from "./DashboardLayout.module.css";
 import { getProfile } from "../../services/profileService";
 
-const DashboardLayout = ({ children }) => {
+const DashboardLayout = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
@@ -36,17 +37,6 @@ const DashboardLayout = ({ children }) => {
     localStorage.setItem("user", JSON.stringify(updatedUser));
   };
 
-  // 3. Clone children and inject user + onUserUpdate props
-  const childrenWithProps = React.Children.map(children, (child) => {
-    if (React.isValidElement(child)) {
-      return React.cloneElement(child, {
-        user,
-        onUserUpdate: handleUserUpdate,
-      });
-    }
-    return child;
-  });
-
   return (
     <div className={styles.layout}>
       <Sidebar
@@ -65,7 +55,7 @@ const DashboardLayout = ({ children }) => {
         <Navbar user={user} onMenuClick={() => setIsMobileOpen(true)} />
         <main className={styles.contentBody}>
           <div className={styles.container}>
-            {childrenWithProps}
+            <Outlet context={{ user, onUserUpdate: handleUserUpdate }} />
           </div>
         </main>
       </div>

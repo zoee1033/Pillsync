@@ -6,6 +6,7 @@ from sqlalchemy import (
     DateTime
 )
 
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from app.database import Base
@@ -62,4 +63,32 @@ class User(Base):
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now()
+    )
+
+    # ============================
+    # Relationships
+    # ============================
+
+    treatments = relationship(
+        "Treatment",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
+
+    history = relationship(
+        "History",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
+
+    notifications = relationship(
+        "Notification",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
+
+    device_tokens = relationship(
+        "DeviceToken",
+        back_populates="user",
+        cascade="all, delete-orphan"
     )

@@ -1,0 +1,152 @@
+.treatmentContainer {
+  min-height: 100%;
+}
+
+.headerSection {
+  margin-bottom: 32px;
+}
+
+.pageTitle {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-text-dark);
+}
+
+.pageSubtitle {
+  margin-top: 8px;
+  color: var(--color-text-gray);
+  font-size: 14px;
+}
+
+.contentGrid {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 24px;
+}
+
+.formCard,
+.listCard {
+  padding: 32px;
+  box-shadow: var(--shadow-soft);
+  border-radius: var(--radius-card);
+}
+
+.cardHeader {
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cardHeader h3 {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.alert {
+  padding: 16px 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.alertSuccess {
+  background-color: #E6FFFA;
+  color: #2F855A;
+  border: 1px solid #C6F6D5;
+}
+
+.alertError {
+  background-color: #FFF5F5;
+  color: #C53030;
+  border: 1px solid #FED7D7;
+}
+
+.treatmentForm {
+  display: grid;
+  gap: 16px;
+}
+
+.selectRow,
+.textareaRow {
+  display: flex;
+  flex-direction: column;
+}
+
+.selectLabel,
+.inputLabel {
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: var(--color-text-gray);
+}
+
+.selectField,
+.textarea {
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 14px;
+  width: 100%;
+  background-color: #fff;
+  color: var(--color-text-dark);
+}
+
+.textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.actionRow {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.treatmentList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.treatmentItem {
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  padding: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  background: #fff;
+}
+
+.treatmentInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.treatmentTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-dark);
+}
+
+.treatmentMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  color: var(--color-text-gray);
+  font-size: 13px;
+}
+
+.itemActions {
+  display: flex;
+  gap: 10px;
+}
+
+@media (max-width: 1024px) {
+  .contentGrid {
+    grid-template-columns: 1fr;
+  }
+}

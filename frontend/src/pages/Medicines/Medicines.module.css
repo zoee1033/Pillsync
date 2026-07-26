@@ -1,0 +1,259 @@
+﻿.medicinePage {
+  min-height: 100%;
+}
+
+.controlsRow {
+  margin-bottom: 24px;
+}
+
+.pageHeader {
+  margin-bottom: 18px;
+}
+
+.pageTitle {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-text-dark);
+}
+
+.pageSubtitle {
+  margin-top: 8px;
+  color: var(--color-text-gray);
+  font-size: 14px;
+}
+
+.treatmentCard,
+.formCard,
+.listCard {
+  padding: 28px;
+  box-shadow: var(--shadow-soft);
+  border-radius: var(--radius-card);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.treatmentHeading {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.treatmentStatus {
+  padding: 8px 14px;
+  border-radius: 999px;
+  background-color: rgba(72, 187, 120, 0.12);
+  color: var(--color-text-dark);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.treatmentDetails {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.detailLabel {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--color-text-gray);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.detailValue {
+  font-size: 15px;
+  color: var(--color-text-dark);
+  font-weight: 600;
+}
+
+.gridLayout {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.form {
+  display: grid;
+  gap: 16px;
+}
+
+.selectRow,
+.textareaRow {
+  display: flex;
+  flex-direction: column;
+}
+
+.selectLabel,
+.inputLabel {
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: var(--color-text-gray);
+}
+
+.selectField,
+.textarea {
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 14px;
+  width: 100%;
+  background-color: #fff;
+  color: var(--color-text-dark);
+}
+
+.textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.checkboxRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--color-text-dark);
+  font-weight: 600;
+}
+
+.buttonRow {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.alert {
+  margin-bottom: 20px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  font-size: 14px;
+}
+
+.alertSuccess {
+  background-color: #E6FFFA;
+  color: #2F855A;
+  border: 1px solid #C6F6D5;
+}
+
+.alertError {
+  background-color: #FFF5F5;
+  color: #C53030;
+  border: 1px solid #FED7D7;
+}
+
+.medicineList {
+  display: grid;
+  gap: 18px;
+}
+
+.medicineItem {
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  padding: 20px;
+  background: #fff;
+  display: grid;
+  gap: 16px;
+}
+
+.medicineHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.medicineName {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--color-text-dark);
+}
+
+.medicineSubtext {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--color-text-gray);
+}
+
+.statusActive,
+.statusInactive {
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.statusActive {
+  background-color: rgba(72, 187, 120, 0.12);
+  color: #2F855A;
+}
+
+.statusInactive {
+  background-color: rgba(229, 62, 62, 0.12);
+  color: #C53030;
+}
+
+.medicineDetails {
+  display: grid;
+  gap: 10px;
+}
+
+.detailRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--color-text-dark);
+}
+
+.itemActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.filterBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 18px;
+  background-color: rgba(238, 251, 255, 0.92);
+  border: 1px solid rgba(80, 181, 234, 0.25);
+  margin-bottom: 24px;
+}
+
+.filterTitle {
+  color: var(--color-text-gray);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.filterValue {
+  margin-top: 6px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-dark);
+}
+
+.messageCard {
+  padding: 28px;
+}
+
+.emptyActions {
+  margin-top: 18px;
+}
+
+@media (max-width: 1024px) {
+  .gridLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .treatmentDetails {
+    grid-template-columns: 1fr;
+  }
+}

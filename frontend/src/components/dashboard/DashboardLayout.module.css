@@ -20,9 +20,11 @@
 }
 
 .contentBody {
-  flex: 1;
+  flex: 1 1 auto;
   padding: 40px;
   overflow-x: hidden;
+  overflow-y: auto;
+  height: calc(100vh - 80px); /* leave room for sticky navbar */
 }
 
 .container {

@@ -3,6 +3,7 @@ import {
   BrowserRouter as Router,
   Routes,
   Route,
+  useSearchParams,
 } from "react-router-dom";
 
 import Landing from "../pages/Landing/Landing";
@@ -11,12 +12,44 @@ import Register from "../pages/Auth/Register";
 import Dashboard from "../pages/Dashboard/Dashboard";
 import Profile from "../pages/Profile/Profile";
 import Settings from "../pages/Settings/Settings";
+import Treatments from "../pages/Treatments/Treatments";
+import Medicines from "../pages/Medicines/Medicines";
+import Reminders from "../pages/Reminders/Reminders";
+import History from "../pages/History/History";
+import Notifications from "../pages/Notifications/Notifications";
 
 import ProtectedRoute from "./ProtectedRoute";
+import DashboardLayout from "../components/dashboard/DashboardLayout";
+import NotificationDetailsModal from "../components/notifications/NotificationDetailsModal";
+
+const NotificationModalContainer = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const reminderId = searchParams.get("open_reminder_id");
+
+  if (!reminderId) return null;
+
+  const handleClose = () => {
+    searchParams.delete("open_reminder_id");
+    setSearchParams(searchParams, { replace: true });
+  };
+
+  const handleRefresh = () => {
+    window.dispatchEvent(new Event("pillsync_refresh_ui"));
+  };
+
+  return (
+    <NotificationDetailsModal
+      reminderId={reminderId}
+      onClose={handleClose}
+      onRefresh={handleRefresh}
+    />
+  );
+};
 
 const AppRoutes = () => {
   return (
     <Router>
+      <NotificationModalContainer />
       <Routes>
 
         {/* Public Routes */}
@@ -36,34 +69,23 @@ const AppRoutes = () => {
           element={<Register />}
         />
 
-        {/* Protected Routes */}
-
+        {/* Protected Routes (layout persists) */}
         <Route
-          path="/dashboard"
           element={
             <ProtectedRoute>
-              <Dashboard />
+              <DashboardLayout />
             </ProtectedRoute>
           }
-        />
-
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/settings"
-          element={
-            <ProtectedRoute>
-              <Settings />
-            </ProtectedRoute>
-          }
-        />
+        >
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/treatments" element={<Treatments />} />
+          <Route path="/medicines" element={<Medicines />} />
+          <Route path="/reminders" element={<Reminders />} />
+          <Route path="/notifications" element={<Notifications />} />
+          <Route path="/history" element={<History />} />
+          <Route path="/settings" element={<Settings />} />
+        </Route>
 
       </Routes>
     </Router>
