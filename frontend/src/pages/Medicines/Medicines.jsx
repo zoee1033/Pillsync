@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
@@ -75,6 +75,15 @@ const Medicines = ({ treatment }) => {
     loadMedicines();
     setForm(initialForm);
     setEditingId(null);
+
+    const handleGlobalRefresh = () => {
+      loadMedicines();
+    };
+
+    window.addEventListener("pillsync_refresh_ui", handleGlobalRefresh);
+    return () => {
+      window.removeEventListener("pillsync_refresh_ui", handleGlobalRefresh);
+    };
   }, [effectiveTreatment?.id]);
 
   const resetForm = () => {
@@ -149,6 +158,7 @@ const Medicines = ({ treatment }) => {
       }
       resetForm();
       await loadMedicines();
+      window.dispatchEvent(new CustomEvent("pillsync_refresh_ui"));
     } catch (error) {
       console.error(error);
       setMessage({
@@ -183,6 +193,7 @@ const Medicines = ({ treatment }) => {
       await deleteMedicine(medicineId);
       setMessage({ type: "success", text: "Medicine deleted successfully." });
       await loadMedicines();
+      window.dispatchEvent(new CustomEvent("pillsync_refresh_ui"));
     } catch (error) {
       console.error(error);
       setMessage({

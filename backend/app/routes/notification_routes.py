@@ -3,6 +3,7 @@ from typing import List
 from fastapi import (
     APIRouter,
     Depends,
+    Query,
     status
 )
 
@@ -26,7 +27,9 @@ from app.services.notification_service import (
     mark_as_read,
     mark_as_sent,
     delete_notification,
-    get_unread_notifications
+    get_unread_notifications,
+    process_notification_action,
+    process_reminder_action
 )
 
 router = APIRouter(
@@ -111,6 +114,52 @@ def unread_notifications(
 ):
 
     return get_unread_notifications(
+        db=db,
+        current_user=current_user
+    )
+
+
+# =====================================================
+# Perform Notification Action (Single Source of Truth)
+# =====================================================
+
+@router.put(
+    "/{notification_id}/action"
+)
+def execute_notification_action_endpoint(
+    notification_id: int,
+    action_type: str = Query(
+        ...,
+        description="taken | skipped | snooze | delete"
+    ),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
+    return process_notification_action(
+        notification_id=notification_id,
+        action_type=action_type,
+        db=db,
+        current_user=current_user
+    )
+
+
+@router.put(
+    "/reminder/{reminder_id}/action"
+)
+def execute_reminder_action_endpoint(
+    reminder_id: int,
+    action_type: str = Query(
+        ...,
+        description="taken | skipped | snooze | delete"
+    ),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
+    return process_reminder_action(
+        reminder_id=reminder_id,
+        action_type=action_type,
         db=db,
         current_user=current_user
     )

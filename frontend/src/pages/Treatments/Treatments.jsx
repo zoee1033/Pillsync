@@ -104,6 +104,12 @@ const Treatments = () => {
     navigate("/medicines", { state: { treatment: item } });
   };
 
+  const handleViewHistory = (item) => {
+    navigate(`/history?treatment_id=${item.id}`, {
+      state: { treatment: item },
+    });
+  };
+
   const handleDelete = async (id) => {
     try {
       await deleteTreatment(id);
@@ -243,6 +249,9 @@ const Treatments = () => {
                     </Button>
                     <Button variant="secondary" onClick={() => openMedicines(item)}>
                       Manage Medicines
+                    </Button>
+                    <Button variant="outline" onClick={() => handleViewHistory(item)}>
+                      View History
                     </Button>
                     <Button variant="outline" onClick={() => handleDelete(item.id)}>
                       Delete

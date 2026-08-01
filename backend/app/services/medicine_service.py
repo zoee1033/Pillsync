@@ -13,6 +13,7 @@ from app.schemas.medicine_schema import (
     MedicineUpdate
 )
 from app.services.history_service import is_duplicate_history
+from app.utils.medicine_validator import validate_medicine_name
 
 
 # ==========================================================
@@ -24,6 +25,13 @@ def create_medicine(
     medicine: MedicineCreate,
     current_user: User
 ):
+    # Validate medicine name before creation
+    is_valid, err_msg = validate_medicine_name(medicine.medicine_name)
+    if not is_valid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=err_msg
+        )
 
     treatment = (
         db.query(Treatment)
@@ -53,6 +61,20 @@ def create_medicine(
     db.add(new_medicine)
     db.commit()
     db.refresh(new_medicine)
+
+    # Log Medicine Added history
+    if not is_duplicate_history(db, current_user.id, new_medicine.treatment_id, HistoryStatus.MEDICINE_ADDED.value, new_medicine.id):
+        hist = History(
+            user_id=current_user.id,
+            treatment_id=new_medicine.treatment_id,
+            medicine_id=new_medicine.id,
+            scheduled_time=datetime.utcnow(),
+            action_time=datetime.utcnow(),
+            status=HistoryStatus.MEDICINE_ADDED.value,
+            notes=f"Medicine '{new_medicine.medicine_name}' added to treatment."
+        )
+        db.add(hist)
+        db.commit()
 
     return new_medicine
 
@@ -169,6 +191,14 @@ def update_medicine(
     update_data = medicine_data.model_dump(
         exclude_unset=True
     )
+
+    if "medicine_name" in update_data and update_data["medicine_name"]:
+        is_valid, err_msg = validate_medicine_name(update_data["medicine_name"])
+        if not is_valid:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=err_msg
+            )
 
     for key, value in update_data.items():
         setattr(medicine, key, value)

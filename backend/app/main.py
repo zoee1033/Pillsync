@@ -61,8 +61,6 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(profile_router)
 app.include_router(treatment_router)
-
-# Uncomment these when they are ready
 app.include_router(medicine_router)
 app.include_router(reminder_router)
 app.include_router(history_router)

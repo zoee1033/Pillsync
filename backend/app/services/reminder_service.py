@@ -20,6 +20,9 @@ from app.schemas.reminder_schema import (
 # ==========================================================
 
 def calculate_next_trigger(reminder_time, repeat_type="Daily", base_datetime=None):
+    from datetime import time as time_type
+    if isinstance(reminder_time, str):
+        reminder_time = time_type.fromisoformat(reminder_time)
     now = base_datetime or datetime.now().astimezone()
 
     if now.tzinfo is not None:
@@ -269,7 +272,7 @@ def snooze_reminder(
         current_user
     )
 
-    now = datetime.utcnow()
+    now = datetime.now().astimezone()
     reminder.next_trigger_at = now + timedelta(minutes=minutes)
 
     history_entry = History(

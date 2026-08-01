@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import Card from "../common/Card";
 import Button from "../common/Button";
-import { getReminderById, snoozeReminder } from "../../services/reminderService";
-import { createHistory } from "../../services/historyService";
+import { getReminderById } from "../../services/reminderService";
+import { performReminderAction } from "../../services/notificationService";
 import styles from "./NotificationDetailsModal.module.css";
 
 const NotificationDetailsModal = ({ reminderId, onClose, onRefresh }) => {
@@ -45,33 +45,8 @@ const NotificationDetailsModal = ({ reminderId, onClose, onRefresh }) => {
     setActionLoading(true);
 
     try {
-      const nowIso = new Date().toISOString();
-      const medicine = reminder.medicine || {};
-      const treatment = medicine.treatment || {};
-
-      if (actionType === "taken") {
-        await createHistory({
-          treatment_id: treatment.id || medicine.treatment_id,
-          medicine_id: medicine.id || reminder.medicine_id,
-          reminder_id: reminder.id,
-          scheduled_time: reminder.next_trigger_at || nowIso,
-          status: "Taken",
-          notes: "Marked taken via Notification Details Card",
-        });
-      } else if (actionType === "snooze") {
-        const snoozeMins = reminder.snooze_minutes || 10;
-        await snoozeReminder(reminder.id, snoozeMins);
-      } else if (actionType === "skip") {
-        await createHistory({
-          treatment_id: treatment.id || medicine.treatment_id,
-          medicine_id: medicine.id || reminder.medicine_id,
-          reminder_id: reminder.id,
-          scheduled_time: reminder.next_trigger_at || nowIso,
-          status: "Skipped",
-          skip_reason: "Skipped via Notification Details Card",
-          notes: "Occurrence skipped",
-        });
-      }
+      const actionKey = actionType === "skip" ? "skipped" : actionType;
+      await performReminderAction(reminder.id, actionKey);
 
       if (onRefresh) {
         await onRefresh();

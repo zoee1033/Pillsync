@@ -16,7 +16,14 @@ import {
   TbPill,
 } from "react-icons/tb";
 
-import { loginUser } from "../../services/authService";
+import {
+  loginUser,
+  requestForgotPasswordOTP,
+  verifyForgotPasswordOTP,
+  resetPasswordWithOTP,
+  googleLogin,
+  appleLogin,
+} from "../../services/authService";
 import { saveToken } from "../../utils/token";
 
 const LoginIllustration = () => (
@@ -80,7 +87,6 @@ export default function Login() {
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(false);
-
   const [rememberMe, setRememberMe] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -88,29 +94,40 @@ export default function Login() {
     password: "",
   });
 
-  const handleChange = (e) => {
+  // Forgot Password Workflow state
+  const [isForgotMode, setIsForgotMode] = useState(false);
+  const [forgotStep, setForgotStep] = useState(1);
+  const [forgotData, setForgotData] = useState({
+    email: "",
+    otp: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [forgotMsg, setForgotMsg] = useState({ type: "", text: "" });
 
+  const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
+  };
 
+  const handleForgotChange = (e) => {
+    setForgotData({
+      ...forgotData,
+      [e.target.name]: e.target.value,
+    });
   };
 
   const handleSubmit = async (e) => {
-
     e.preventDefault();
 
     try {
-
       setLoading(true);
 
       const response = await loginUser({
-
         email: formData.email,
-
         password: formData.password,
-
       });
 
       saveToken(response.access_token);
@@ -125,122 +142,355 @@ export default function Login() {
       navigate("/dashboard");
 
     } catch (error) {
-
       alert(
         error.response?.data?.detail ||
         "Login Failed"
       );
-
     } finally {
-
       setLoading(false);
-
     }
-
   };
-    return (
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setLoading(true);
+      const email = prompt("Enter your Google Account email address:", "user@google.com");
+      if (!email) {
+        setLoading(false);
+        return;
+      }
+      const response = await googleLogin({
+        email: email,
+        full_name: email.split("@")[0],
+        provider: "google"
+      });
+
+      saveToken(response.access_token);
+      localStorage.setItem("user", JSON.stringify(response.user));
+      alert("Google Sign-In Successful");
+      navigate("/dashboard");
+    } catch (error) {
+      alert(error.response?.data?.detail || "Google Sign-In Failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    try {
+      setLoading(true);
+      const email = prompt("Enter your Apple ID email address:", "user@icloud.com");
+      if (!email) {
+        setLoading(false);
+        return;
+      }
+      const response = await appleLogin({
+        email: email,
+        full_name: email.split("@")[0],
+        provider: "apple"
+      });
+
+      saveToken(response.access_token);
+      localStorage.setItem("user", JSON.stringify(response.user));
+      alert("Apple Sign-In Successful");
+      navigate("/dashboard");
+    } catch (error) {
+      alert(error.response?.data?.detail || "Apple Sign-In Failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Forgot Password Steps
+  const handleRequestOTP = async (e) => {
+    e.preventDefault();
+    if (!forgotData.email.trim()) {
+      setForgotMsg({ type: "error", text: "Please enter your email address." });
+      return;
+    }
+    try {
+      setLoading(true);
+      setForgotMsg({ type: "", text: "" });
+      const res = await requestForgotPasswordOTP(forgotData.email.trim());
+      setForgotMsg({ type: "success", text: res.message });
+      setForgotStep(2);
+    } catch (err) {
+      setForgotMsg({
+        type: "error",
+        text: err.response?.data?.detail || "Failed to send OTP.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async (e) => {
+    e.preventDefault();
+    if (!forgotData.otp.trim()) {
+      setForgotMsg({ type: "error", text: "Please enter the 6-digit OTP." });
+      return;
+    }
+    try {
+      setLoading(true);
+      setForgotMsg({ type: "", text: "" });
+      const res = await verifyForgotPasswordOTP(forgotData.email.trim(), forgotData.otp.trim());
+      setForgotMsg({ type: "success", text: res.message });
+      setForgotStep(3);
+    } catch (err) {
+      setForgotMsg({
+        type: "error",
+        text: err.response?.data?.detail || "Invalid OTP code.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    if (forgotData.newPassword !== forgotData.confirmPassword) {
+      setForgotMsg({ type: "error", text: "Passwords do not match." });
+      return;
+    }
+    try {
+      setLoading(true);
+      setForgotMsg({ type: "", text: "" });
+      const res = await resetPasswordWithOTP({
+        email: forgotData.email.trim(),
+        otp: forgotData.otp.trim(),
+        new_password: forgotData.newPassword,
+        confirm_password: forgotData.confirmPassword,
+      });
+      alert(res.message);
+      setIsForgotMode(false);
+      setForgotStep(1);
+      setForgotData({ email: "", otp: "", newPassword: "", confirmPassword: "" });
+      setForgotMsg({ type: "", text: "" });
+    } catch (err) {
+      setForgotMsg({
+        type: "error",
+        text: err.response?.data?.detail || "Failed to reset password.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetForgotState = () => {
+    setIsForgotMode(false);
+    setForgotStep(1);
+    setForgotMsg({ type: "", text: "" });
+  };
+
+  return (
     <AuthLayout leftContent={<LoginIllustration />}>
       <Card className="auth-card">
 
-        <div className="auth-header">
-          <h1>Login to Your Account</h1>
-          <p>Enter your details to continue your health journey.</p>
-        </div>
+        {isForgotMode ? (
+          <div>
+            <div className="auth-header">
+              <h1>Forgot Password</h1>
+              <p>
+                {forgotStep === 1 && "Enter your email to receive a 6-digit OTP."}
+                {forgotStep === 2 && "Enter the 6-digit OTP sent to your email."}
+                {forgotStep === 3 && "Set your new account password."}
+              </p>
+            </div>
 
-        <form className="auth-form" onSubmit={handleSubmit}>
+            {forgotMsg.text && (
+              <div style={{
+                marginBottom: "16px",
+                padding: "12px 16px",
+                borderRadius: "8px",
+                fontSize: "14px",
+                backgroundColor: forgotMsg.type === "success" ? "#E6FFFA" : "#FFF5F5",
+                color: forgotMsg.type === "success" ? "#2F855A" : "#C53030",
+                border: forgotMsg.type === "success" ? "1px solid #C6F6D5" : "1px solid #FED7D7"
+              }}>
+                {forgotMsg.text}
+              </div>
+            )}
 
-          <Input
-            label="Email Address"
-            name="email"
-            type="email"
-            placeholder="john@example.com"
-            value={formData.email}
-            onChange={handleChange}
-            required
-          />
+            {forgotStep === 1 && (
+              <form onSubmit={handleRequestOTP} className="auth-form">
+                <Input
+                  label="Email Address"
+                  name="email"
+                  type="email"
+                  placeholder="john@example.com"
+                  value={forgotData.email}
+                  onChange={handleForgotChange}
+                  required
+                />
+                <Button variant="primary" className="full-width-btn" type="submit" disabled={loading}>
+                  {loading ? "Sending OTP..." : "Send OTP"}
+                </Button>
+              </form>
+            )}
 
-          <Input
-            label="Password"
-            name="password"
-            type="password"
-            placeholder="••••••••"
-            value={formData.password}
-            onChange={handleChange}
-            required
-          />
+            {forgotStep === 2 && (
+              <form onSubmit={handleVerifyOTP} className="auth-form">
+                <Input
+                  label="6-Digit OTP"
+                  name="otp"
+                  type="text"
+                  placeholder="123456"
+                  maxLength={6}
+                  value={forgotData.otp}
+                  onChange={handleForgotChange}
+                  required
+                />
+                <Button variant="primary" className="full-width-btn" type="submit" disabled={loading}>
+                  {loading ? "Verifying..." : "Verify OTP"}
+                </Button>
+              </form>
+            )}
 
-          <div className="form-options">
+            {forgotStep === 3 && (
+              <form onSubmit={handleResetPassword} className="auth-form">
+                <Input
+                  label="New Password"
+                  name="newPassword"
+                  type="password"
+                  placeholder="••••••••"
+                  value={forgotData.newPassword}
+                  onChange={handleForgotChange}
+                  required
+                />
+                <Input
+                  label="Confirm New Password"
+                  name="confirmPassword"
+                  type="password"
+                  placeholder="••••••••"
+                  value={forgotData.confirmPassword}
+                  onChange={handleForgotChange}
+                  required
+                />
+                <Button variant="primary" className="full-width-btn" type="submit" disabled={loading}>
+                  {loading ? "Resetting..." : "Set New Password"}
+                </Button>
+              </form>
+            )}
 
-            <label className="remember-me">
+            <p className="auth-bottom-text">
+              <a href="#" className="auth-link" onClick={(e) => { e.preventDefault(); resetForgotState(); }}>
+                Back to Login
+              </a>
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="auth-header">
+              <h1>Login to Your Account</h1>
+              <p>Enter your details to continue your health journey.</p>
+            </div>
 
-              <input
-                type="checkbox"
-                checked={rememberMe}
-                onChange={() =>
-                  setRememberMe(!rememberMe)
-                }
+            <form className="auth-form" onSubmit={handleSubmit}>
+
+              <Input
+                label="Email Address"
+                name="email"
+                type="email"
+                placeholder="john@example.com"
+                value={formData.email}
+                onChange={handleChange}
+                required
               />
 
-              <span>Remember Me</span>
+              <Input
+                label="Password"
+                name="password"
+                type="password"
+                placeholder="••••••••"
+                value={formData.password}
+                onChange={handleChange}
+                required
+              />
 
-            </label>
+              <div className="form-options">
 
-            <a
-              href="#"
-              className="forgot-password"
-            >
-              Forgot Password?
-            </a>
+                <label className="remember-me">
 
-          </div>
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={() =>
+                      setRememberMe(!rememberMe)
+                    }
+                  />
 
-          <Button
-            variant="primary"
-            className="full-width-btn"
-            type="submit"
-            disabled={loading}
-          >
-            {loading ? "Logging In..." : "Login"}
-          </Button>
+                  <span>Remember Me</span>
 
-        </form>
+                </label>
 
-        <div className="divider">
-          <span>or</span>
-        </div>
+                <a
+                  href="#"
+                  className="forgot-password"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsForgotMode(true);
+                    setForgotStep(1);
+                    setForgotMsg({ type: "", text: "" });
+                  }}
+                >
+                  Forgot Password?
+                </a>
 
-        <div className="social-login">
+              </div>
 
-          <Button
-            variant="outline"
-            className="social-btn"
-            type="button"
-          >
-            <FcGoogle size={20} />
-            <span>Continue with Google</span>
-          </Button>
+              <Button
+                variant="primary"
+                className="full-width-btn"
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? "Logging In..." : "Login"}
+              </Button>
 
-          <Button
-            variant="outline"
-            className="social-btn dark-btn"
-            type="button"
-          >
-            <FaApple size={20} />
-            <span>Continue with Apple</span>
-          </Button>
+            </form>
 
-        </div>
+            <div className="divider">
+              <span>or</span>
+            </div>
 
-        <p className="auth-bottom-text">
-          Don't have an account?
+            <div className="social-login">
 
-          <Link
-            to="/register"
-            className="auth-link"
-          >
-            Sign up
-          </Link>
-        </p>
+              <Button
+                variant="outline"
+                className="social-btn"
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={loading}
+              >
+                <FcGoogle size={20} />
+                <span>Continue with Google</span>
+              </Button>
+
+              <Button
+                variant="outline"
+                className="social-btn dark-btn"
+                type="button"
+                onClick={handleAppleSignIn}
+                disabled={loading}
+              >
+                <FaApple size={20} />
+                <span>Continue with Apple</span>
+              </Button>
+
+            </div>
+
+            <p className="auth-bottom-text">
+              Don't have an account?
+
+              <Link
+                to="/register"
+                className="auth-link"
+              >
+                Sign up
+              </Link>
+            </p>
+          </>
+        )}
 
       </Card>
     </AuthLayout>

@@ -1,8 +1,12 @@
 export const HISTORY_STATUS = {
+  TREATMENT_STARTED: "Treatment Started",
+  TREATMENT_ACTIVE: "Treatment Active",
   COMPLETED: "Completed",
+  MEDICINE_ADDED: "Medicine Added",
   MEDICINE_COMPLETED: "Medicine Completed",
   EXPIRED: "Expired",
   CANCELLED: "Cancelled",
+  REMINDER_TRIGGERED: "Reminder Triggered",
   TAKEN: "Taken",
   SKIPPED: "Skipped",
   MISSED: "Missed",
@@ -10,10 +14,25 @@ export const HISTORY_STATUS = {
 };
 
 export const STATUS_META = {
+  [HISTORY_STATUS.TREATMENT_STARTED]: {
+    label: "Treatment Started",
+    icon: "🚀",
+    className: "statusStarted",
+  },
+  [HISTORY_STATUS.TREATMENT_ACTIVE]: {
+    label: "Treatment Active",
+    icon: "🟢",
+    className: "statusActive",
+  },
   [HISTORY_STATUS.COMPLETED]: {
     label: "Completed",
     icon: "✅",
     className: "statusCompleted",
+  },
+  [HISTORY_STATUS.MEDICINE_ADDED]: {
+    label: "Medicine Added",
+    icon: "➕",
+    className: "statusMedicineAdded",
   },
   [HISTORY_STATUS.MEDICINE_COMPLETED]: {
     label: "Medicine Completed",
@@ -29,6 +48,11 @@ export const STATUS_META = {
     label: "Cancelled",
     icon: "🚫",
     className: "statusCancelled",
+  },
+  [HISTORY_STATUS.REMINDER_TRIGGERED]: {
+    label: "Reminder Triggered",
+    icon: "🔔",
+    className: "statusReminderTriggered",
   },
   [HISTORY_STATUS.TAKEN]: {
     label: "Taken",
