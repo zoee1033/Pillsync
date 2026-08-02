@@ -1,15 +1,25 @@
 import React, { useEffect } from 'react';
 import AppRoutes from './routes/AppRoutes';
-import { initializeFirebaseMessaging } from './utils/firebaseMessaging';
+import { initializeFirebaseMessaging, startNotificationSync } from './utils/firebaseMessaging';
 import { getToken as getAuthToken } from './utils/token';
 
 function App() {
   useEffect(() => {
-    if (!getAuthToken()) {
-      return;
-    }
+    const initNotifications = () => {
+      if (getAuthToken()) {
+        initializeFirebaseMessaging();
+        startNotificationSync();
+      }
+    };
 
-    initializeFirebaseMessaging();
+    initNotifications();
+
+    window.addEventListener("pillsync_refresh_ui", initNotifications);
+    window.addEventListener("storage", initNotifications);
+    return () => {
+      window.removeEventListener("pillsync_refresh_ui", initNotifications);
+      window.removeEventListener("storage", initNotifications);
+    };
   }, []);
 
   return (

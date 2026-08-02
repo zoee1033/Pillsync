@@ -49,9 +49,11 @@ def _async_send_push_worker(user_id: int, reminder_id: int, medicine_id: int, no
         )
 
         if not active_tokens:
-            print(f"[TRACE {datetime.utcnow().isoformat()}] [ASYNC_WORKER] No active device tokens for user {user_id}", flush=True)
+            print(f"[TRACE {datetime.utcnow().isoformat()}] [ASYNC_WORKER] No active device tokens for user {user_id}. Marking notification as sent for local browser sync.", flush=True)
+            mark_as_sent(notification_id, db)
             return
 
+        sent_any = False
         for device in active_tokens:
             masked_tok = f"{device.fcm_token[:6]}...{device.fcm_token[-6:]}" if len(device.fcm_token) > 12 else "***"
             print(f"[TRACE {datetime.utcnow().isoformat()}] [ASYNC_WORKER] Attempting FCM push for user {user_id} using token ID {device.id} ({masked_tok})...", flush=True)
@@ -70,6 +72,7 @@ def _async_send_push_worker(user_id: int, reminder_id: int, medicine_id: int, no
                 )
 
                 mark_as_sent(notification_id, db)
+                sent_any = True
                 print(f"[TRACE {datetime.utcnow().isoformat()}] [STAGE 3: FIREBASE_SEND_SUCCESS] FCM Message ID: {response}, Notification ID: {notification_id}, Token ID: {device.id}", flush=True)
                 break
 
@@ -117,6 +120,9 @@ def _async_send_push_worker(user_id: int, reminder_id: int, medicine_id: int, no
                         flush=True
                     )
                     print(f"[TRACE {datetime.utcnow().isoformat()}] Transient Firebase error for token ID {device.id}: {e}", flush=True)
+
+        if not sent_any:
+            mark_as_sent(notification_id, db)
     finally:
         db.close()
 

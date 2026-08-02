@@ -39,9 +39,15 @@ router = APIRouter(
 # ==========================================
 
 @router.post(
-    "/",
+    "",
     response_model=TreatmentResponse,
     status_code=status.HTTP_201_CREATED
+)
+@router.post(
+    "/",
+    response_model=TreatmentResponse,
+    status_code=status.HTTP_201_CREATED,
+    include_in_schema=False
 )
 def add_treatment(
     treatment: TreatmentCreate,
@@ -61,8 +67,13 @@ def add_treatment(
 # ==========================================
 
 @router.get(
-    "/",
+    "",
     response_model=List[TreatmentResponse]
+)
+@router.get(
+    "/",
+    response_model=List[TreatmentResponse],
+    include_in_schema=False
 )
 def fetch_treatments(
     db: Session = Depends(get_db),

@@ -41,7 +41,8 @@ class NotificationBase(BaseModel):
         allowed = [
             "Reminder",
             "System",
-            "Alert"
+            "Alert",
+            "Refill"
         ]
 
         if value not in allowed:
@@ -58,7 +59,7 @@ class NotificationBase(BaseModel):
 
 class NotificationCreate(NotificationBase):
 
-    reminder_id: int
+    reminder_id: Optional[int] = None
 
 
 # =====================================================
@@ -82,7 +83,7 @@ class NotificationResponse(NotificationBase):
 
     user_id: int
 
-    reminder_id: int
+    reminder_id: Optional[int] = None
 
     sent_at: Optional[datetime]
 

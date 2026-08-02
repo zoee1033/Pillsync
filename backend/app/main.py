@@ -21,12 +21,33 @@ from app.routes.reminder_routes import router as reminder_router
 from app.routes.history_routes import router as history_router
 from app.routes.notification_routes import router as notification_router
 from app.routes.device_token_routes import router as device_token_router
+from app.routes.ocr_routes import router as ocr_router
+from app.routes.analytics_routes import router as analytics_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Create database tables
     Base.metadata.create_all(bind=engine)
+
+    # Auto-migrate optional profile columns on users table
+    with engine.begin() as conn:
+        for col_def in [
+            "ADD COLUMN IF NOT EXISTS age INTEGER",
+            "ADD COLUMN IF NOT EXISTS gender VARCHAR(20)",
+            "ADD COLUMN IF NOT EXISTS blood_group VARCHAR(10)",
+            "ADD COLUMN IF NOT EXISTS weight VARCHAR(20)",
+            "ADD COLUMN IF NOT EXISTS height VARCHAR(20)",
+            "ADD COLUMN IF NOT EXISTS medical_conditions TEXT",
+            "ADD COLUMN IF NOT EXISTS allergies TEXT",
+            "ADD COLUMN IF NOT EXISTS emergency_contact VARCHAR(100)",
+            "ADD COLUMN IF NOT EXISTS primary_doctor VARCHAR(100)",
+            "ADD COLUMN IF NOT EXISTS hospital VARCHAR(100)",
+            "ADD COLUMN IF NOT EXISTS language VARCHAR(50) DEFAULT 'English'",
+            "ADD COLUMN IF NOT EXISTS timezone VARCHAR(50) DEFAULT 'UTC'",
+            "ADD COLUMN IF NOT EXISTS reminder_preferences TEXT",
+        ]:
+            conn.execute(text(f"ALTER TABLE users {col_def};"))
 
     # Start background scheduler
     start_scheduler()
@@ -66,6 +87,9 @@ app.include_router(reminder_router)
 app.include_router(history_router)
 app.include_router(notification_router)
 app.include_router(device_token_router)
+app.include_router(ocr_router)
+app.include_router(analytics_router)
+
 
 
 @app.get("/")

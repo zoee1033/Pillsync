@@ -1,7 +1,7 @@
 import api from "./api";
 
 export const getHistory = async () => {
-  const response = await api.get("/history");
+  const response = await api.get("/history/");
   return response.data;
 };
 
@@ -11,7 +11,7 @@ export const getHistoryById = async (historyId) => {
 };
 
 export const createHistory = async (historyData) => {
-  const response = await api.post("/history", historyData);
+  const response = await api.post("/history/", historyData);
   return response.data;
 };
 

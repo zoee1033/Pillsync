@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useOutletContext } from "react-router-dom";
 import useAuth from "../../hooks/useAuth";
 import Card from "../../components/common/Card";
 import Input from "../../components/common/Input";
@@ -8,17 +9,18 @@ import { getProfile, updateProfile, changePassword } from "../../services/profil
 import { TbUserEdit, TbLock } from "react-icons/tb";
 
 const ProfileContent = ({ user: propUser, onUserUpdate }) => {
+  const outlet = useOutletContext() || {};
   const auth = useAuth();
-  const contextUser = auth?.user;
-  const contextUpdateUser = auth?.updateUser;
+  const contextUser = propUser || outlet.user || auth?.user || null;
+  const contextUpdateUser = onUserUpdate || outlet.onUserUpdate || auth?.updateUser;
 
-  const [profileUser, setProfileUser] = useState(propUser || contextUser || null);
-  const [loadingProfile, setLoadingProfile] = useState(!propUser && !contextUser);
+  const [profileUser, setProfileUser] = useState(contextUser);
+  const [loadingProfile, setLoadingProfile] = useState(true);
 
-  const currentUser = profileUser || {
-    full_name: "Health User",
+  const currentUser = profileUser || contextUser || {
+    full_name: "Loading...",
     role: "patient",
-    email: "user@example.com",
+    email: "",
     phone: "",
     created_at: null,
     is_active: true,
@@ -30,25 +32,21 @@ const ProfileContent = ({ user: propUser, onUserUpdate }) => {
     phone: currentUser.phone || "",
   });
 
-  // Fetch the profile once if no user data is available.
+  // Always fetch fresh profile details from backend database on mount
   useEffect(() => {
     const initProfile = async () => {
-      if (profileUser) {
-        return;
-      }
-
       setLoadingProfile(true);
       try {
         const response = await getProfile();
-        if (response && response.data) {
-          setProfileUser(response.data);
+        const userObj = response?.data || response;
+        if (userObj && (userObj.id || userObj.email || userObj.full_name)) {
+          setProfileUser(userObj);
           setProfileData({
-            fullName: response.data.full_name || "",
-            phone: response.data.phone || "",
+            fullName: userObj.full_name || "",
+            phone: userObj.phone || "",
           });
-          const updater = onUserUpdate || contextUpdateUser;
-          if (updater) {
-            updater(response.data);
+          if (contextUpdateUser) {
+            contextUpdateUser(userObj);
           }
         }
       } catch (error) {
@@ -59,21 +57,18 @@ const ProfileContent = ({ user: propUser, onUserUpdate }) => {
     };
 
     initProfile();
-  }, [profileUser, onUserUpdate, contextUpdateUser]);
+  }, []);
 
-  // Synchronize state when the authenticated user changes.
+  // Synchronize state when external user prop or context updates
   useEffect(() => {
-    const activeUser = propUser || contextUser || profileUser;
-    if (!activeUser) {
-      return;
+    if (contextUser) {
+      setProfileUser(contextUser);
+      setProfileData({
+        fullName: contextUser.full_name || "",
+        phone: contextUser.phone || "",
+      });
     }
-
-    setProfileUser(activeUser);
-    setProfileData({
-      fullName: activeUser.full_name || "",
-      phone: activeUser.phone || "",
-    });
-  }, [propUser, contextUser]);
+  }, [propUser, outlet.user]);
 
   const [isEditing, setIsEditing] = useState(false);
   const [profileStatus, setProfileStatus] = useState({ type: "", message: "" });

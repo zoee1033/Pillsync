@@ -9,6 +9,7 @@ import {
   performNotificationAction,
 } from "../../services/notificationService";
 import styles from "./Notifications.module.css";
+import api from "../../services/api";
 
 const Notifications = () => {
   const navigate = useNavigate();
@@ -130,9 +131,25 @@ const Notifications = () => {
             <div className={styles.summaryLabel}>Total</div>
             <div className={styles.summaryValue}>{notifications.length}</div>
           </div>
-          <Button variant="outline" onClick={loadNotifications} disabled={loading}>
-            Refresh
-          </Button>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                try {
+                  await api.put("/notifications/read");
+                  loadNotifications();
+                } catch (e) {
+                  console.error(e);
+                }
+              }}
+              disabled={loading}
+            >
+              Mark All as Read
+            </Button>
+            <Button variant="outline" onClick={loadNotifications} disabled={loading}>
+              Refresh
+            </Button>
+          </div>
         </div>
       </Card>
 
@@ -186,7 +203,14 @@ const Notifications = () => {
                   <div className={styles.notificationMessage}>{notification.message}</div>
 
                   <div className={styles.itemActions}>
-                    {!notification.is_read && (
+                    {!notification.is_read && notification.notification_type === "Refill" ? (
+                      <Button
+                        variant="primary"
+                        onClick={() => navigate("/medicines")}
+                      >
+                        🛒 Restock Now
+                      </Button>
+                    ) : !notification.is_read ? (
                       <>
                         <Button
                           variant="outline"
@@ -210,7 +234,7 @@ const Notifications = () => {
                           😴 Snooze
                         </Button>
                       </>
-                    )}
+                    ) : null}
                     <Button
                       variant="secondary"
                       onClick={() => handleAction(notification, "delete")}

@@ -33,7 +33,8 @@ const Treatments = () => {
     setLoading(true);
     try {
       const response = await getTreatments();
-      setTreatments(response);
+      const data = Array.isArray(response) ? response : (response?.data && Array.isArray(response.data) ? response.data : []);
+      setTreatments(data);
     } catch (error) {
       console.error(error);
       setMessage({ type: "error", text: "Unable to load treatments." });
@@ -44,6 +45,15 @@ const Treatments = () => {
 
   useEffect(() => {
     loadTreatments();
+
+    const handleGlobalRefresh = () => {
+      loadTreatments();
+    };
+
+    window.addEventListener("pillsync_refresh_ui", handleGlobalRefresh);
+    return () => {
+      window.removeEventListener("pillsync_refresh_ui", handleGlobalRefresh);
+    };
   }, []);
 
   const resetForm = () => {
@@ -74,6 +84,7 @@ const Treatments = () => {
       }
       resetForm();
       await loadTreatments();
+      window.dispatchEvent(new CustomEvent("pillsync_refresh_ui"));
     } catch (error) {
       setMessage({
         type: "error",
@@ -115,6 +126,7 @@ const Treatments = () => {
       await deleteTreatment(id);
       setMessage({ type: "success", text: "Treatment deleted successfully." });
       await loadTreatments();
+      window.dispatchEvent(new CustomEvent("pillsync_refresh_ui"));
     } catch (error) {
       setMessage({
         type: "error",
@@ -122,6 +134,8 @@ const Treatments = () => {
       });
     }
   };
+
+  const [selectedDetailsTreatment, setSelectedDetailsTreatment] = useState(null);
 
   return (
     <div className={styles.treatmentContainer}>
@@ -193,7 +207,9 @@ const Treatments = () => {
                 className={styles.selectField}
               >
                 <option value="Active">Active</option>
+                <option value="Paused">Paused</option>
                 <option value="Completed">Completed</option>
+                <option value="Archived">Archived</option>
                 <option value="Cancelled">Cancelled</option>
               </select>
             </div>
@@ -234,35 +250,138 @@ const Treatments = () => {
             <p>No treatments found.</p>
           ) : (
             <div className={styles.treatmentList}>
-              {treatments.map((item) => (
-                <div key={item.id} className={styles.treatmentItem}>
-                  <div className={styles.treatmentInfo}>
-                    <div className={styles.treatmentTitle}>{item.disease_name}</div>
-                    <div className={styles.treatmentMeta}>
-                      <span>{item.status}</span>
-                      <span>{item.start_date}</span>
+              {treatments.map((item) => {
+                const startMs = new Date(item.start_date).getTime();
+                const endMs = new Date(item.end_date).getTime();
+                const nowMs = new Date().getTime();
+                const totalMs = Math.max(1, endMs - startMs);
+                const elapsedMs = Math.max(0, nowMs - startMs);
+                const progressPct = Math.min(100, Math.max(0, Math.round((elapsedMs / totalMs) * 100)));
+
+                return (
+                  <div key={item.id} className={styles.treatmentItem}>
+                    <div className={styles.treatmentInfo} style={{ width: "100%" }}>
+                      <div className="flex items-center justify-between">
+                        <div className={styles.treatmentTitle}>{item.disease_name}</div>
+                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                          item.status === 'Active' ? 'bg-green-100 text-green-800' :
+                          item.status === 'Completed' ? 'bg-blue-100 text-blue-800' :
+                          item.status === 'Paused' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-800'
+                        }`}>
+                          {item.status}
+                        </span>
+                      </div>
+
+                      {item.doctor_name && (
+                        <div className="text-xs text-slate-500 mt-1">
+                          Doctor: <strong className="text-slate-700">{item.doctor_name}</strong>
+                        </div>
+                      )}
+
+                      {/* Progress Bar */}
+                      <div className="mt-3 flex items-center gap-3">
+                        <div className="flex-1 bg-slate-200 rounded-full h-2 overflow-hidden">
+                          <div
+                            className="bg-[#0F8B6D] h-2 rounded-full transition-all duration-500"
+                            style={{ width: `${progressPct}%` }}
+                          />
+                        </div>
+                        <span className="text-xs font-semibold text-slate-600 min-w-[36px] text-right">{progressPct}%</span>
+                      </div>
+                    </div>
+
+                    <div className={styles.itemActions} style={{ marginTop: "1rem" }}>
+                      <Button variant="outline" onClick={() => setSelectedDetailsTreatment(item)}>
+                        View Details
+                      </Button>
+                      <Button variant="outline" onClick={() => handleEdit(item)}>
+                        Edit
+                      </Button>
+                      <Button variant="secondary" onClick={() => openMedicines(item)}>
+                        Manage Medicines
+                      </Button>
+                      <Button variant="outline" onClick={() => handleDelete(item.id)}>
+                        Delete
+                      </Button>
                     </div>
                   </div>
-                  <div className={styles.itemActions}>
-                    <Button variant="outline" onClick={() => handleEdit(item)}>
-                      Edit
-                    </Button>
-                    <Button variant="secondary" onClick={() => openMedicines(item)}>
-                      Manage Medicines
-                    </Button>
-                    <Button variant="outline" onClick={() => handleViewHistory(item)}>
-                      View History
-                    </Button>
-                    <Button variant="outline" onClick={() => handleDelete(item.id)}>
-                      Delete
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </Card>
       </div>
+
+      {/* View Details Modal */}
+      {selectedDetailsTreatment && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 relative border border-slate-100">
+            <button
+              onClick={() => setSelectedDetailsTreatment(null)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg font-bold"
+            >
+              ✕
+            </button>
+            <h3 className="text-xl font-bold text-slate-800 mb-1">{selectedDetailsTreatment.disease_name}</h3>
+            <div className="flex items-center gap-2 mb-4">
+              <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                selectedDetailsTreatment.status === 'Active' ? 'bg-emerald-100 text-emerald-800' :
+                selectedDetailsTreatment.status === 'Completed' ? 'bg-teal-100 text-teal-800' : 'bg-slate-100 text-slate-800'
+              }`}>
+                {selectedDetailsTreatment.status}
+              </span>
+            </div>
+
+            <div className="space-y-3 text-sm text-slate-600 border-t border-slate-100 pt-3">
+              {selectedDetailsTreatment.doctor_name && (
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Doctor:</span>
+                  <span className="font-semibold text-slate-800">{selectedDetailsTreatment.doctor_name}</span>
+                </div>
+              )}
+              {selectedDetailsTreatment.diagnosis_date && (
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Diagnosis Date:</span>
+                  <span>{String(selectedDetailsTreatment.diagnosis_date).slice(0, 10)}</span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span className="text-slate-400">Start Date:</span>
+                <span>{String(selectedDetailsTreatment.start_date).slice(0, 10)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">End Date:</span>
+                <span>{String(selectedDetailsTreatment.end_date).slice(0, 10)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Days Remaining:</span>
+                <span className="font-semibold text-[#0F8B6D]">
+                  {Math.max(0, Math.ceil((new Date(selectedDetailsTreatment.end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))} days
+                </span>
+              </div>
+              {selectedDetailsTreatment.notes && (
+                <div className="border-t border-slate-100 pt-2 mt-2">
+                  <span className="text-slate-400 block mb-1">Notes:</span>
+                  <p className="bg-slate-50 p-2.5 rounded-lg text-slate-700 text-xs italic">{selectedDetailsTreatment.notes}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => {
+                const item = selectedDetailsTreatment;
+                setSelectedDetailsTreatment(null);
+                openMedicines(item);
+              }}>
+                Medicines & Reminders
+              </Button>
+              <Button variant="outline" onClick={() => setSelectedDetailsTreatment(null)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

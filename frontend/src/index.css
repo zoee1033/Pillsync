@@ -5,17 +5,17 @@
 @tailwind utilities;
 
 :root {
-  --color-bg-warm-ivory: #FAF7F2;
-  --color-primary-green: #0E8A63;
-  --color-light-green: #DDF3E9;
-  --color-dark-green: #166534;
-  --color-accent-orange: #C96D5A;
-  --color-text-dark: #202124;
+  --color-bg-warm-ivory: #F8FAF8;
+  --color-primary-green: #0F8B6D;
+  --color-light-green: #E6F4F0;
+  --color-dark-green: #0A614C;
+  --color-accent-orange: #C96E55;
+  --color-text-dark: #1F2937;
   --color-text-gray: #6B7280;
   --color-card-white: #FFFFFF;
-  --color-border: #E5E7EB;
+  --color-border: #E7ECE9;
   
-  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.05);
+  --shadow-soft: 0 4px 20px rgba(15, 139, 109, 0.06);
   --radius-card: 20px;
   --radius-button: 999px;
   --radius-input: 12px;

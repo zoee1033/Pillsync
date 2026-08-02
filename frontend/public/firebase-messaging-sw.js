@@ -65,10 +65,19 @@ messaging.onBackgroundMessage((payload) => {
   const title = payload.notification?.title || payload.data?.title || '💊 Pill Reminder';
   const reminderId = payload.data?.reminder_id || payload.notification?.data?.reminder_id;
   const notificationId = payload.data?.notification_id || payload.notification?.data?.notification_id;
+  const notifType = payload.data?.notification_type || payload.notification?.data?.notification_type;
 
   console.log(`[TRACE ${new Date().toISOString()}] [STAGE 4: SW_ON_BACKGROUND_MESSAGE] SW ID: ${SW_INSTANCE_ID}, Notification ID: ${notificationId}, Reminder ID: ${reminderId}`, payload);
 
   const tag = notificationId ? `notification_${notificationId}` : (reminderId ? `reminder_${reminderId}` : `pillsync_${Date.now()}`);
+
+  const isRefillAlert = notifType?.toLowerCase() === 'refill' ||
+    Boolean(title?.toLowerCase().includes('refill')) ||
+    Boolean(title?.toLowerCase().includes('out of stock')) ||
+    Boolean(payload.notification?.body?.toLowerCase().includes('out of stock')) ||
+    Boolean(payload.data?.body?.toLowerCase().includes('out of stock')) ||
+    Boolean(payload.notification?.body?.toLowerCase().includes('no tablets')) ||
+    Boolean(payload.data?.body?.toLowerCase().includes('no tablets'));
 
   const options = {
     body: payload.notification?.body || payload.data?.body || 'You have a medication reminder.',
@@ -81,11 +90,12 @@ messaging.onBackgroundMessage((payload) => {
       notification_id: notificationId,
       ...payload.data
     },
-    actions: [
+    actions: isRefillAlert ? [
+      { action: 'view_medicine', title: '🛒 Restock Now' },
+      { action: 'dismiss', title: '✕ Dismiss' }
+    ] : [
       { action: 'taken', title: '✅ Taken' },
-      { action: 'skipped', title: '⏭ Skipped' },
-      { action: 'snooze', title: '😴 Snooze' },
-      { action: 'delete', title: '🗑 Delete' }
+      { action: 'skipped', title: '⏭ Skipped' }
     ]
   };
 
@@ -102,6 +112,28 @@ self.addEventListener('notificationclick', (event) => {
 
   console.log(`[TRACE ${new Date().toISOString()}] [STAGE 6: NOTIFICATIONCLICK_EVENT] SW ID: ${SW_INSTANCE_ID}, Action: "${action || 'BODY_CLICK'}", Notification ID: ${notificationId}, Reminder ID: ${reminderId}`);
 
+  if (action === 'dismiss') {
+    return;
+  }
+
+  if (action === 'view_medicine' || action === 'restock') {
+    const targetUrl = '/medicines';
+    event.waitUntil(
+      clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async (clientList) => {
+        for (const client of clientList) {
+          if (client.url && 'focus' in client) {
+            client.navigate(targetUrl);
+            return client.focus();
+          }
+        }
+        if (clients.openWindow) {
+          return clients.openWindow(targetUrl);
+        }
+      })
+    );
+    return;
+  }
+
   if (action) {
     // ACTION BUTTON CLICKED: Perform 100% background processing ONLY!
     // NO UI, NO NAVIGATION, NO client.focus(), NO clients.openWindow()!
@@ -109,22 +141,30 @@ self.addEventListener('notificationclick', (event) => {
       (async () => {
         console.log(`[TRACE ${new Date().toISOString()}] Action button clicked: "${action}". Executing background fetch directly from SW ID: ${SW_INSTANCE_ID}`);
         const token = await getStoredToken();
+        console.log(`[TRACE ${new Date().toISOString()}] [SW_AUTH_AUDIT] getStoredToken() returned: ${token ? 'JWT Token Present' : 'NULL'}`);
+
         const headers = { 'Content-Type': 'application/json' };
         if (token) {
           headers['Authorization'] = `Bearer ${token}`;
         }
+        console.log(`[TRACE ${new Date().toISOString()}] [SW_AUTH_AUDIT] Authorization header: ${headers['Authorization'] ? 'Bearer <PRESENT>' : 'MISSING'}`);
 
         let endpoint = '';
         if (notificationId) {
-          endpoint = `http://localhost:8000/notifications/${notificationId}/action?action_type=${action}`;
+          endpoint = `http://127.0.0.1:8000/notifications/${notificationId}/action?action_type=${action}`;
         } else if (reminderId) {
-          endpoint = `http://localhost:8000/notifications/reminder/${reminderId}/action?action_type=${action}`;
+          endpoint = `http://127.0.0.1:8000/notifications/reminder/${reminderId}/action?action_type=${action}`;
         }
 
         if (endpoint) {
+          console.log(`[TRACE ${new Date().toISOString()}] [SW_FETCH_AUDIT] Request URL: ${endpoint}`);
           try {
             const fetchRes = await fetch(endpoint, { method: 'PUT', headers });
-            console.log(`[TRACE ${new Date().toISOString()}] SW background fetch completed with status ${fetchRes.status}`);
+            console.log(`[TRACE ${new Date().toISOString()}] [SW_FETCH_AUDIT] fetchRes.status: ${fetchRes.status}, fetchRes.ok: ${fetchRes.ok}`);
+            if (!fetchRes.ok) {
+              const errText = await fetchRes.text();
+              console.error(`[TRACE ${new Date().toISOString()}] [SW_FETCH_AUDIT ERROR] Response Status ${fetchRes.status} >= 400: ${errText}`);
+            }
           } catch (err) {
             console.error('Service Worker background action fetch failed:', err);
           }

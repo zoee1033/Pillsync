@@ -25,7 +25,9 @@ from app.services.medicine_service import (
     get_all_user_medicines,
     get_medicine_by_id,
     update_medicine,
-    delete_medicine
+    delete_medicine,
+    get_refill_predictions,
+    get_dosage_analysis
 )
 
 
@@ -33,6 +35,32 @@ router = APIRouter(
     prefix="/medicines",
     tags=["Medicines"]
 )
+
+
+# =====================================================
+# Refill Predictions
+# =====================================================
+
+@router.get("/refill-predictions")
+def fetch_refill_predictions(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return get_refill_predictions(db=db, current_user=current_user)
+
+
+# =====================================================
+# Dosage Analysis
+# =====================================================
+
+@router.get("/{medicine_id}/dosage-analysis")
+def fetch_dosage_analysis(
+    medicine_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return get_dosage_analysis(medicine_id=medicine_id, db=db, current_user=current_user)
+
 
 
 # =====================================================

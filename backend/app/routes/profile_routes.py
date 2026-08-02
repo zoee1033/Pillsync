@@ -18,7 +18,7 @@ def get_profile(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Get the authenticated user's profile details.
+    Get the authenticated user's profile and health details.
     """
     return {
         "message": "Profile fetched successfully.",
@@ -29,6 +29,19 @@ def get_profile(
             "phone": current_user.phone,
             "role": current_user.role,
             "is_active": current_user.is_active,
+            "age": current_user.age,
+            "gender": current_user.gender,
+            "blood_group": current_user.blood_group,
+            "weight": current_user.weight,
+            "height": current_user.height,
+            "medical_conditions": current_user.medical_conditions,
+            "allergies": current_user.allergies,
+            "emergency_contact": current_user.emergency_contact,
+            "primary_doctor": current_user.primary_doctor,
+            "hospital": current_user.hospital,
+            "language": current_user.language or "English",
+            "timezone": current_user.timezone or "UTC",
+            "reminder_preferences": current_user.reminder_preferences,
             "created_at": current_user.created_at.isoformat() if current_user.created_at else None,
         }
     }
@@ -41,7 +54,7 @@ def update_profile(
     db: Session = Depends(get_db)
 ):
     """
-    Update the authenticated user's full name and phone number.
+    Update the authenticated user's profile and health details.
     """
     return update_profile_service(db, current_user, data)
 

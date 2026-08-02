@@ -8,7 +8,7 @@ from app.utils.password import hash_password, verify_password
 
 def update_profile_service(db: Session, current_user: User, data: ProfileUpdateRequest):
     """
-    Update the authenticated user's name and phone number in the database.
+    Update the authenticated user's profile and health data in PostgreSQL.
     """
     user = db.query(User).filter(User.id == current_user.id).first()
     if not user:
@@ -17,8 +17,10 @@ def update_profile_service(db: Session, current_user: User, data: ProfileUpdateR
             detail="User not found."
         )
 
-    user.full_name = data.full_name
-    user.phone = data.phone
+    update_dict = data.model_dump(exclude_unset=True)
+    for key, value in update_dict.items():
+        if hasattr(user, key):
+            setattr(user, key, value)
 
     db.add(user)
     db.commit()
@@ -33,6 +35,19 @@ def update_profile_service(db: Session, current_user: User, data: ProfileUpdateR
             "phone": user.phone,
             "role": user.role,
             "is_active": user.is_active,
+            "age": user.age,
+            "gender": user.gender,
+            "blood_group": user.blood_group,
+            "weight": user.weight,
+            "height": user.height,
+            "medical_conditions": user.medical_conditions,
+            "allergies": user.allergies,
+            "emergency_contact": user.emergency_contact,
+            "primary_doctor": user.primary_doctor,
+            "hospital": user.hospital,
+            "language": user.language,
+            "timezone": user.timezone,
+            "reminder_preferences": user.reminder_preferences,
             "created_at": user.created_at.isoformat() if user.created_at else None,
         }
     }
@@ -40,30 +55,26 @@ def update_profile_service(db: Session, current_user: User, data: ProfileUpdateR
 
 def change_password_service(db: Session, current_user: User, data: ChangePasswordRequest):
     """
-    Verify the current password, then hash and save the new password.
+    Verify current password, hash, and save the new password.
     """
-    # 1. Verify passwords match
     if data.new_password != data.confirm_password:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Passwords do not match."
         )
 
-    # 2. Check that current password is correct
     if not verify_password(data.current_password, current_user.password):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Incorrect current password."
         )
 
-    # 3. Prevent reusing the same password
     if verify_password(data.new_password, current_user.password):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="New password cannot be the same as the current password."
         )
 
-    # 4. Attach current_user to the active SQLAlchemy session by reloading it
     user = db.query(User).filter(User.id == current_user.id).first()
     if not user:
         raise HTTPException(
@@ -72,25 +83,12 @@ def change_password_service(db: Session, current_user: User, data: ChangePasswor
         )
 
     new_hash = hash_password(data.new_password)
-
-    # 5. Explicitly persist the update
     user.password = new_hash
     db.add(user)
     db.commit()
     db.refresh(user)
 
-    # 6. Immediately verify the update by querying from database again
-    db.expire(user)  # force expire to reload from db on next access
-    verified_user = db.query(User).filter(User.id == current_user.id).first()
-
-    if verified_user.password != new_hash:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Password update failed to persist in the database."
-        )
-
     return {
         "message": "Password changed successfully.",
         "data": None
     }
-

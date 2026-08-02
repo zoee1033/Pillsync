@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 
 from fastapi import HTTPException, status
@@ -11,6 +12,8 @@ from app.schemas.notification_schema import (
     NotificationCreate,
     NotificationUpdate
 )
+
+logger = logging.getLogger(__name__)
 
 
 # ==========================================================
@@ -189,6 +192,83 @@ def delete_notification(
     return {
         "message": "Notification deleted successfully."
     }
+
+
+# ==========================================================
+# Get Refill Notifications
+# ==========================================================
+
+def get_refill_notifications(db: Session, current_user: User):
+    """
+    Auto-generates and retrieves stock refill alerts for medicines finishing within 7 days.
+    """
+    from app.services.medicine_service import get_refill_predictions
+
+    predictions = get_refill_predictions(db, current_user)
+    refill_alerts = []
+
+    for pred in predictions:
+        if pred["is_low_stock"]:
+            med_name = pred["medicine_name"]
+            days_left = pred["remaining_days"]
+            msg = f"⚠️ {med_name}: Only {days_left} day{'s' if days_left != 1 else ''} remaining." if days_left > 0 else f"⚠️ {med_name}: Stock almost over."
+
+            # Check if notification already exists
+            existing = (
+                db.query(Notification)
+                .filter(
+                    Notification.user_id == current_user.id,
+                    Notification.title == f"Refill Alert: {med_name}",
+                    Notification.is_read == False
+                )
+                .first()
+            )
+
+            if not existing:
+                reminder = db.query(Reminder).filter(Reminder.medicine_id == pred["medicine_id"]).first()
+                if not reminder:
+                    continue
+
+                new_notif = Notification(
+                    user_id=current_user.id,
+                    reminder_id=reminder.id,
+                    title=f"Refill Alert: {med_name}",
+                    message=msg,
+                    notification_type="Refill",
+                    is_read=False,
+                    is_sent=True
+                )
+                db.add(new_notif)
+                db.commit()
+                db.refresh(new_notif)
+                existing = new_notif
+
+            refill_alerts.append(existing)
+
+    return refill_alerts
+
+
+def mark_all_as_read(db: Session, current_user: User):
+    """
+    Marks all unread notifications for current user as read.
+    """
+    db.query(Notification).filter(
+        Notification.user_id == current_user.id,
+        Notification.is_read == False
+    ).update({"is_read": True}, synchronize_session=False)
+
+    db.commit()
+    return {"message": "All notifications marked as read."}
+
+
+def clear_all_notifications(db: Session, current_user: User):
+    db.query(Notification).filter(
+        Notification.user_id == current_user.id
+    ).delete(synchronize_session=False)
+
+    db.commit()
+    return {"message": "All notifications cleared successfully."}
+
 
 
 # ==========================================================

@@ -29,13 +29,56 @@ from app.services.notification_service import (
     delete_notification,
     get_unread_notifications,
     process_notification_action,
-    process_reminder_action
+    process_reminder_action,
+    get_refill_notifications,
+    mark_all_as_read
 )
 
 router = APIRouter(
     prefix="/notifications",
     tags=["Notifications"]
 )
+
+
+# =====================================================
+# Refill Notifications
+# =====================================================
+
+@router.get(
+    "/refill",
+    response_model=List[NotificationResponse]
+)
+def fetch_refill_notifications(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return get_refill_notifications(db=db, current_user=current_user)
+
+
+# =====================================================
+# Bulk Mark Read
+# =====================================================
+
+@router.put(
+    "/read"
+)
+def bulk_read_notifications(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return mark_all_as_read(db=db, current_user=current_user)
+
+
+@router.delete(
+    "/clear-all"
+)
+def clear_all_user_notifications(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    from app.services.notification_service import clear_all_notifications
+    return clear_all_notifications(db=db, current_user=current_user)
+
 
 
 # =====================================================
@@ -80,6 +123,25 @@ def fetch_notifications(
 
 
 # =====================================================
+# Get Unread Notifications
+# =====================================================
+
+@router.get(
+    "/unread",
+    response_model=List[NotificationResponse]
+)
+def unread_notifications(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
+    return get_unread_notifications(
+        db=db,
+        current_user=current_user
+    )
+
+
+# =====================================================
 # Get Notification By ID
 # =====================================================
 
@@ -95,25 +157,6 @@ def fetch_notification(
 
     return get_notification_by_id(
         notification_id=notification_id,
-        db=db,
-        current_user=current_user
-    )
-
-
-# =====================================================
-# Get Unread Notifications
-# =====================================================
-
-@router.get(
-    "/unread",
-    response_model=List[NotificationResponse]
-)
-def unread_notifications(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-
-    return get_unread_notifications(
         db=db,
         current_user=current_user
     )

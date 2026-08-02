@@ -262,3 +262,132 @@ def delete_medicine(
     return {
         "message": "Medicine deleted successfully."
     }
+
+
+# ==========================================================
+# Refill Prediction Engine
+# ==========================================================
+
+def get_refill_predictions(db: Session, current_user: User):
+    """
+    Calculates stock countdown, estimated finish date, and refill recommended dates dynamically.
+    Daily Consumption = Dose * Doses Per Day
+    Remaining Days = Current Stock / Daily Consumption
+    Refill Date = Today + Remaining Days (Formatted e.g. '30 Aug')
+    Thresholds: >15 Days (Healthy/Green), 8-15 Days (Refill Soon/Yellow), 4-7 Days (Urgent/Orange), <=3 Days (Critical/Red)
+    """
+    from datetime import datetime, timedelta
+    import re
+    from app.models.reminder import Reminder
+
+    medicines = get_all_user_medicines(db, current_user)
+    predictions = []
+    now = datetime.now()
+
+    for med in medicines:
+        reminders = db.query(Reminder).filter(Reminder.medicine_id == med.id, Reminder.status == "Active").all()
+
+        dose_match = re.search(r'(\d+)', med.dosage or "1")
+        dose_per_intake = int(dose_match.group(1)) if dose_match else 1
+        if dose_per_intake <= 0:
+            dose_per_intake = 1
+
+        times_per_day = len(reminders) if reminders else 1
+        daily_consumption = dose_per_intake * times_per_day
+        remaining_tablets = max(0, med.quantity)
+
+        remaining_days = int(remaining_tablets / daily_consumption) if daily_consumption > 0 else 30
+
+        refill_dt = now + timedelta(days=remaining_days)
+        refill_date_str = refill_dt.strftime("%d %b")
+
+        # 4-Tier Refill Status Classification
+        if remaining_days > 15:
+            status_category = "Healthy"
+            progress_color = "Green"
+            hex_color = "#10B981"
+            badge_icon = "🟢"
+        elif 8 <= remaining_days <= 15:
+            status_category = "Refill Soon"
+            progress_color = "Yellow"
+            hex_color = "#F59E0B"
+            badge_icon = "🟡"
+        elif 4 <= remaining_days <= 7:
+            status_category = "Urgent"
+            progress_color = "Orange"
+            hex_color = "#F97316"
+            badge_icon = "🟠"
+        else:
+            status_category = "Critical"
+            progress_color = "Red"
+            hex_color = "#EF4444"
+            badge_icon = "🔴"
+
+        # Stock ratio percentage (assuming 30 or current max stock)
+        estimated_initial_stock = max(remaining_tablets, 30)
+        progress_percent = min(100, max(0, int((remaining_tablets / estimated_initial_stock) * 100)))
+
+        predictions.append({
+            "medicine_id": med.id,
+            "medicine_name": med.medicine_name,
+            "medicine_type": med.medicine_type,
+            "current_stock": remaining_tablets,
+            "dose_per_intake": dose_per_intake,
+            "times_per_day": times_per_day,
+            "daily_consumption": daily_consumption,
+            "remaining_days": remaining_days,
+            "refill_date": refill_date_str,
+            "estimated_finish_date": refill_dt.strftime("%Y-%m-%d"),
+            "refill_recommended_date": refill_date_str,
+            "status_category": status_category,
+            "progress_color": progress_color,
+            "hex_color": hex_color,
+            "badge_icon": badge_icon,
+            "progress_percent": progress_percent,
+            "is_low_stock": remaining_days <= 7
+        })
+
+    return predictions
+
+
+# ==========================================================
+# Dosage Analysis
+# ==========================================================
+
+def get_dosage_analysis(medicine_id: int, db: Session, current_user: User):
+    """
+    Returns dosage breakdown, dose execution stats, and visual timeline per time slot.
+    """
+    medicine = get_medicine_by_id(medicine_id, db, current_user)
+    history_records = db.query(History).filter(History.medicine_id == medicine_id).all()
+
+    completed_doses = sum(1 for h in history_records if h.status == HistoryStatus.TAKEN.value)
+    missed_doses = sum(1 for h in history_records if h.status == HistoryStatus.MISSED.value)
+    skipped_doses = sum(1 for h in history_records if h.status == HistoryStatus.SKIPPED.value)
+
+    total_doses = completed_doses + missed_doses + skipped_doses + max(0, medicine.quantity)
+
+    # Time slot visual timeline (Morning, Afternoon, Night)
+    from datetime import datetime
+    now_hour = datetime.now().hour
+
+    morning_status = "Completed" if completed_doses > 0 else ("Missed" if now_hour > 12 else "Upcoming")
+    afternoon_status = "Completed" if completed_doses > 1 else ("Missed" if now_hour > 17 else "Upcoming")
+    night_status = "Upcoming" if now_hour < 21 else "Completed"
+
+    timeline = [
+        {"slot": "Morning", "time": "08:00 AM", "status": morning_status},
+        {"slot": "Afternoon", "time": "02:00 PM", "status": afternoon_status},
+        {"slot": "Night", "time": "08:00 PM", "status": night_status}
+    ]
+
+    return {
+        "medicine_id": medicine.id,
+        "medicine_name": medicine.medicine_name,
+        "total_prescribed_doses": total_doses,
+        "completed_doses": completed_doses,
+        "missed_doses": missed_doses,
+        "skipped_doses": skipped_doses,
+        "remaining_schedule": medicine.quantity,
+        "visual_timeline": timeline
+    }

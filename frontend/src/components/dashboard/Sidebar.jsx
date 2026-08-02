@@ -21,6 +21,8 @@ const Sidebar = ({ user, isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileO
 
   const menuItems = [
     { path: "/dashboard", label: "Dashboard", icon: <TbLayoutDashboard size={22} /> },
+    { path: "/ocr", label: "OCR Scanner", icon: <TbPill size={22} /> },
+    { path: "/analytics", label: "Analytics", icon: <TbClock size={22} /> },
     { path: "/profile", label: "Profile", icon: <TbUser size={22} /> },
     { path: "/treatments", label: "Treatments", icon: <TbPill size={22} /> },
     { path: "/medicines", label: "Medicines", icon: <TbPill size={22} /> },

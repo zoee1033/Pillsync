@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getToken } from "../utils/token";
+import { getToken, removeToken } from "../utils/token";
 
 const api = axios.create({
   baseURL: "http://127.0.0.1:8000",
@@ -18,6 +18,20 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
+    return Promise.reject(error);
+  }
+);
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      const isNotificationPolling = error.config?.url?.includes("/notifications/unread");
+      if (!isNotificationPolling) {
+        removeToken();
+        localStorage.removeItem("user");
+      }
+    }
     return Promise.reject(error);
   }
 );

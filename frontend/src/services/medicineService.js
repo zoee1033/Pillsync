@@ -1,7 +1,7 @@
 import api from "./api";
 
 export const getAllMedicines = async () => {
-  const response = await api.get("/medicines");
+  const response = await api.get("/medicines/");
   return response.data;
 };
 
@@ -11,7 +11,7 @@ export const getMedicinesByTreatment = async (treatmentId) => {
 };
 
 export const createMedicine = async (medicineData) => {
-  const response = await api.post("/medicines", medicineData);
+  const response = await api.post("/medicines/", medicineData);
   return response.data;
 };
 

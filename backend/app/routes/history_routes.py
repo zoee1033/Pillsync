@@ -1,3 +1,5 @@
+import csv
+import io
 from typing import List
 
 from fastapi import (
@@ -6,20 +8,17 @@ from fastapi import (
     Query,
     status
 )
-
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.middleware.auth import get_current_user
-
 from app.models.user import User
-
 from app.schemas.history_schema import (
     HistoryCreate,
     HistoryUpdate,
     HistoryResponse
 )
-
 from app.services.history_service import (
     create_history,
     get_history,
@@ -35,6 +34,50 @@ router = APIRouter(
     prefix="/history",
     tags=["History"]
 )
+
+
+# =====================================================
+# Export History CSV
+# =====================================================
+
+@router.get("/export/csv")
+def export_history_csv(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Export all medication history records to CSV format.
+    """
+    records = get_history(db=db, current_user=current_user)
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Write header
+    writer.writerow([
+        "ID", "Medicine Name", "Dosage", "Treatment", 
+        "Scheduled Time", "Action Time", "Status", "Skip Reason", "Notes"
+    ])
+    
+    for r in records:
+        writer.writerow([
+            r.id,
+            getattr(r, "medicine_name", "") or "",
+            getattr(r, "dosage", "") or "",
+            getattr(r, "treatment_name", "") or "",
+            r.scheduled_time.isoformat() if r.scheduled_time else "",
+            r.action_time.isoformat() if r.action_time else "",
+            r.status or "",
+            r.skip_reason or "",
+            r.notes or ""
+        ])
+    
+    output.seek(0)
+    return StreamingResponse(
+        io.BytesIO(output.getvalue().encode('utf-8')),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=pillsync_medication_history_{current_user.id}.csv"}
+    )
 
 
 # =====================================================
