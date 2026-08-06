@@ -14,13 +14,14 @@ def send_push_notification(
     masked_token = f"{token[:6]}...{token[-6:]}" if len(token) > 12 else "***"
     print(f"Sending FCM push notification to token: {masked_token}", flush=True)
 
+    payload_data = data.copy() if data else {}
+    payload_data["title"] = title
+    payload_data["body"] = body
+
+    # Use data-only payload to prevent duplicate notifications between Firebase default handler and Service Worker
     message = messaging.Message(
-        notification=messaging.Notification(
-            title=title,
-            body=body
-        ),
         token=token,
-        data=data or {}
+        data=payload_data
     )
 
     try:

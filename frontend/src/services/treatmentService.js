@@ -1,12 +1,12 @@
 import api from "./api";
 
 export const getTreatments = async () => {
-  const response = await api.get("/treatments");
+  const response = await api.get("/treatments/");
   return response.data;
 };
 
 export const createTreatment = async (treatmentData) => {
-  const response = await api.post("/treatments", treatmentData);
+  const response = await api.post("/treatments/", treatmentData);
   return response.data;
 };
 

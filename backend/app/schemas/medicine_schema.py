@@ -28,7 +28,7 @@ class MedicineBase(BaseModel):
 
     quantity: int = Field(
         ...,
-        gt=0
+        ge=0
     )
 
     instructions: Optional[str] = None
@@ -78,6 +78,11 @@ class MedicineBase(BaseModel):
 class MedicineCreate(MedicineBase):
 
     treatment_id: int
+
+    quantity: int = Field(
+        ...,
+        gt=0
+    )
 
 
 # =====================================================

@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 
 from fastapi import HTTPException, status
@@ -11,6 +12,8 @@ from app.schemas.notification_schema import (
     NotificationCreate,
     NotificationUpdate
 )
+
+logger = logging.getLogger(__name__)
 
 
 # ==========================================================
@@ -192,6 +195,83 @@ def delete_notification(
 
 
 # ==========================================================
+# Get Refill Notifications
+# ==========================================================
+
+def get_refill_notifications(db: Session, current_user: User):
+    """
+    Auto-generates and retrieves stock refill alerts for medicines finishing within 7 days.
+    """
+    from app.services.medicine_service import get_refill_predictions
+
+    predictions = get_refill_predictions(db, current_user)
+    refill_alerts = []
+
+    for pred in predictions:
+        if pred["is_low_stock"]:
+            med_name = pred["medicine_name"]
+            days_left = pred["remaining_days"]
+            msg = f"⚠️ {med_name}: Only {days_left} day{'s' if days_left != 1 else ''} remaining." if days_left > 0 else f"⚠️ {med_name}: Stock almost over."
+
+            # Check if notification already exists
+            existing = (
+                db.query(Notification)
+                .filter(
+                    Notification.user_id == current_user.id,
+                    Notification.title == f"Refill Alert: {med_name}",
+                    Notification.is_read == False
+                )
+                .first()
+            )
+
+            if not existing:
+                reminder = db.query(Reminder).filter(Reminder.medicine_id == pred["medicine_id"]).first()
+                if not reminder:
+                    continue
+
+                new_notif = Notification(
+                    user_id=current_user.id,
+                    reminder_id=reminder.id,
+                    title=f"Refill Alert: {med_name}",
+                    message=msg,
+                    notification_type="Refill",
+                    is_read=False,
+                    is_sent=True
+                )
+                db.add(new_notif)
+                db.commit()
+                db.refresh(new_notif)
+                existing = new_notif
+
+            refill_alerts.append(existing)
+
+    return refill_alerts
+
+
+def mark_all_as_read(db: Session, current_user: User):
+    """
+    Marks all unread notifications for current user as read.
+    """
+    db.query(Notification).filter(
+        Notification.user_id == current_user.id,
+        Notification.is_read == False
+    ).update({"is_read": True}, synchronize_session=False)
+
+    db.commit()
+    return {"message": "All notifications marked as read."}
+
+
+def clear_all_notifications(db: Session, current_user: User):
+    db.query(Notification).filter(
+        Notification.user_id == current_user.id
+    ).delete(synchronize_session=False)
+
+    db.commit()
+    return {"message": "All notifications cleared successfully."}
+
+
+
+# ==========================================================
 # Get Unread Notifications
 # ==========================================================
 
@@ -211,3 +291,202 @@ def get_unread_notifications(
         )
         .all()
     )
+
+
+# ==========================================================
+# Process Notification Action (Single Source of Truth)
+# ==========================================================
+
+def process_notification_action(
+    notification_id: int,
+    action_type: str,
+    db: Session,
+    current_user: User
+):
+    action_type = action_type.lower().strip()
+    print(f"[TRACE {datetime.utcnow().isoformat()}] [STAGE 8: BACKEND_API_REQUEST] process_notification_action: Notification ID={notification_id}, Action={action_type}", flush=True)
+
+    if action_type == "delete":
+        res = delete_notification(notification_id, db, current_user)
+        print(f"[TRACE {datetime.utcnow().isoformat()}] [STAGE 9: DATABASE_UPDATE] Notification ID={notification_id} DELETED from PostgreSQL.", flush=True)
+        return res
+
+    notification = get_notification_by_id(notification_id, db, current_user)
+    reminder = notification.reminder
+
+    if not reminder:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Reminder not found for this notification."
+        )
+
+    medicine = reminder.medicine
+    treatment = medicine.treatment if medicine else None
+
+    if action_type == "taken":
+        from app.services.history_service import create_history
+        from app.schemas.history_schema import HistoryCreate
+        from app.models.enums import HistoryStatus
+
+        create_history(
+            db=db,
+            history=HistoryCreate(
+                treatment_id=treatment.id if treatment else 0,
+                medicine_id=medicine.id if medicine else 0,
+                reminder_id=reminder.id,
+                scheduled_time=reminder.next_trigger_at or datetime.utcnow(),
+                status=HistoryStatus.TAKEN.value,
+                notes="Action taken via Notification"
+            ),
+            current_user=current_user
+        )
+        notification.is_read = True
+        db.commit()
+        db.refresh(notification)
+        print(f"[TRACE {datetime.utcnow().isoformat()}] [STAGE 9: DATABASE_UPDATE] Notification ID={notification_id} updated: is_read=True, History row inserted, Medicine qty decremented to {medicine.quantity}.", flush=True)
+        return notification
+
+    elif action_type in ["skipped", "skip"]:
+        from app.services.history_service import create_history
+        from app.schemas.history_schema import HistoryCreate
+        from app.models.enums import HistoryStatus
+
+        create_history(
+            db=db,
+            history=HistoryCreate(
+                treatment_id=treatment.id if treatment else 0,
+                medicine_id=medicine.id if medicine else 0,
+                reminder_id=reminder.id,
+                scheduled_time=reminder.next_trigger_at or datetime.utcnow(),
+                status=HistoryStatus.SKIPPED.value,
+                skip_reason="Action skipped via Notification",
+                notes="Skipped occurrence"
+            ),
+            current_user=current_user
+        )
+        notification.is_read = True
+        db.commit()
+        db.refresh(notification)
+        print(f"[TRACE {datetime.utcnow().isoformat()}] [STAGE 9: DATABASE_UPDATE] Notification ID={notification_id} updated: is_read=True, History row inserted.", flush=True)
+        return notification
+
+    elif action_type in ["snooze", "snoozed"]:
+        from app.services.reminder_service import snooze_reminder
+
+        snooze_reminder(
+            reminder_id=reminder.id,
+            minutes=reminder.snooze_minutes or 10,
+            db=db,
+            current_user=current_user
+        )
+        notification.is_read = True
+        db.commit()
+        db.refresh(notification)
+        print(f"[TRACE {datetime.utcnow().isoformat()}] [STAGE 9: DATABASE_UPDATE] Notification ID={notification_id} updated: is_read=True, Reminder snoozed.", flush=True)
+        return notification
+
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid action_type '{action_type}'"
+        )
+
+
+def process_reminder_action(
+    reminder_id: int,
+    action_type: str,
+    db: Session,
+    current_user: User
+):
+    action_type = action_type.lower().strip()
+    print(f"[TRACE {datetime.utcnow().isoformat()}] [STAGE 8: BACKEND_API_REQUEST] process_reminder_action: Reminder ID={reminder_id}, Action={action_type}", flush=True)
+
+    reminder = (
+        db.query(Reminder)
+        .filter(Reminder.id == reminder_id)
+        .first()
+    )
+
+    if not reminder:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Reminder not found."
+        )
+
+    # Find unread notification if any
+    notif = (
+        db.query(Notification)
+        .filter(
+            Notification.reminder_id == reminder_id,
+            Notification.user_id == current_user.id,
+            Notification.is_read == False
+        )
+        .order_by(Notification.created_at.desc())
+        .first()
+    )
+
+    if notif:
+        return process_notification_action(notif.id, action_type, db, current_user)
+
+    # Fallback when notification row is already deleted/missing
+    medicine = reminder.medicine
+    treatment = medicine.treatment if medicine else None
+
+    if action_type == "taken":
+        from app.services.history_service import create_history
+        from app.schemas.history_schema import HistoryCreate
+        from app.models.enums import HistoryStatus
+
+        create_history(
+            db=db,
+            history=HistoryCreate(
+                treatment_id=treatment.id if treatment else 0,
+                medicine_id=medicine.id if medicine else 0,
+                reminder_id=reminder.id,
+                scheduled_time=reminder.next_trigger_at or datetime.utcnow(),
+                status=HistoryStatus.TAKEN.value,
+                notes="Action taken via Reminder"
+            ),
+            current_user=current_user
+        )
+        return {"message": "Dose marked taken successfully."}
+
+    elif action_type in ["skipped", "skip"]:
+        from app.services.history_service import create_history
+        from app.schemas.history_schema import HistoryCreate
+        from app.models.enums import HistoryStatus
+
+        create_history(
+            db=db,
+            history=HistoryCreate(
+                treatment_id=treatment.id if treatment else 0,
+                medicine_id=medicine.id if medicine else 0,
+                reminder_id=reminder.id,
+                scheduled_time=reminder.next_trigger_at or datetime.utcnow(),
+                status=HistoryStatus.SKIPPED.value,
+                skip_reason="Action skipped via Reminder",
+                notes="Skipped occurrence"
+            ),
+            current_user=current_user
+        )
+        return {"message": "Dose marked skipped successfully."}
+
+    elif action_type in ["snooze", "snoozed"]:
+        from app.services.reminder_service import snooze_reminder
+
+        snooze_reminder(
+            reminder_id=reminder.id,
+            minutes=reminder.snooze_minutes or 10,
+            db=db,
+            current_user=current_user
+        )
+        return {"message": "Reminder snoozed successfully."}
+
+    elif action_type == "delete":
+        return {"message": "No notification to delete."}
+
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid action_type '{action_type}'"
+        )

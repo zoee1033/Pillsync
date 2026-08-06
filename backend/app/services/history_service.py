@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.models.enums import HistoryStatus
 from app.models.history import History
 from app.models.medicine import Medicine
+from app.models.notification import Notification
 from app.models.reminder import Reminder
 from app.models.treatment import Treatment
 from app.models.user import User
@@ -119,6 +120,29 @@ def create_history(
     if history.status == HistoryStatus.TAKEN.value and medicine:
         if medicine.quantity and medicine.quantity > 0:
             medicine.quantity -= 1
+
+            if medicine.quantity <= 10:
+                existing_refill = (
+                    db.query(Notification)
+                    .filter(
+                        Notification.user_id == current_user.id,
+                        Notification.title == "Refill Warning",
+                        Notification.message.like(f"%{medicine.medicine_name}%"),
+                        Notification.is_read == False
+                    )
+                    .first()
+                )
+                if not existing_refill:
+                    rem_id = reminder.id if reminder else None
+                    refill_notif = Notification(
+                        user_id=treatment.user_id,
+                        reminder_id=rem_id,
+                        title="Refill Warning",
+                        message=f"Refill needed for {medicine.medicine_name}. Remaining stock: {medicine.quantity}.",
+                        notification_type="Refill",
+                        is_read=False
+                    )
+                    db.add(refill_notif)
 
     db.add(new_history)
     db.commit()

@@ -1,0 +1,211 @@
+[
+  {
+    "generic_name": "Paracetamol",
+    "brand_names": ["Dolo 650", "Crocin", "Calpol", "Pacimol", "PCM"],
+    "aliases": ["Paracetamoi", "Acetaminophen", "Paracetmol", "Doloo", "Paracet"],
+    "dosages": ["125mg", "250mg", "500mg", "650mg", "1000mg"],
+    "forms": ["Tablet", "Syrup", "Injection", "Drops"],
+    "category": "Analgesic & Antipyretic",
+    "common_frequency": ["Three times daily", "Twice daily", "As needed"],
+    "common_duration": ["3 days", "5 days", "7 days"],
+    "warnings": ["Do not exceed 4000mg per 24 hours. Monitor liver health."]
+  },
+  {
+    "generic_name": "Metformin",
+    "brand_names": ["Glycomet", "Glucophage", "Obimet", "Riomet"],
+    "aliases": ["Metforrnin", "Metformn", "Glycomet SR", "Metformin HCl"],
+    "dosages": ["250mg", "500mg", "850mg", "1000mg"],
+    "forms": ["Tablet", "Extended Release Tablet"],
+    "category": "Antidiabetic",
+    "common_frequency": ["Twice daily", "Daily (Once a day)"],
+    "common_duration": ["30 days", "60 days", "90 days"],
+    "warnings": ["Take with meals to reduce gastrointestinal side effects."]
+  },
+  {
+    "generic_name": "Amoxicillin",
+    "brand_names": ["Mox", "Novamox", "Amoxil", "Moxikind"],
+    "aliases": ["Arnoxicillin", "Amoxcillin", "Amoxicilin", "Amox"],
+    "dosages": ["125mg", "250mg", "500mg", "875mg"],
+    "forms": ["Capsule", "Tablet", "Dry Syrup"],
+    "category": "Antibiotic (Penicillin)",
+    "common_frequency": ["Twice daily", "Three times daily"],
+    "common_duration": ["5 days", "7 days", "10 days"],
+    "warnings": ["Complete full course even if symptoms improve."]
+  },
+  {
+    "generic_name": "Amoxicillin + Clavulanic Acid",
+    "brand_names": ["Augmentin", "Clavam", "Moxikind-CV", "Advent"],
+    "aliases": ["Augmentin 625", "Augmentin 1000", "Clavam 625"],
+    "dosages": ["375mg", "625mg", "1000mg"],
+    "forms": ["Tablet", "Oral Suspension"],
+    "category": "Antibiotic (Broad Spectrum)",
+    "common_frequency": ["Twice daily"],
+    "common_duration": ["5 days", "7 days"],
+    "warnings": ["Take at start of a meal."]
+  },
+  {
+    "generic_name": "Pantoprazole",
+    "brand_names": ["Pantop", "Pan 40", "Pantocid", "Pantodac"],
+    "aliases": ["Pantoprazoie", "Pantoprazole", "Pantop 40", "Pantop 400mg"],
+    "dosages": ["20mg", "40mg"],
+    "forms": ["Tablet", "Injection"],
+    "category": "Proton Pump Inhibitor (Anti-ulcer)",
+    "common_frequency": ["Daily (Once a day)", "Before breakfast"],
+    "common_duration": ["14 days", "30 days"],
+    "warnings": ["Take 30 minutes before first meal of the day."]
+  },
+  {
+    "generic_name": "Atorvastatin",
+    "brand_names": ["Atorva", "Storvas", "Lipitor", "Atorlip"],
+    "aliases": ["Atorvastatn", "Atorvastatin Calcium"],
+    "dosages": ["5mg", "10mg", "20mg", "40mg", "80mg"],
+    "forms": ["Tablet"],
+    "category": "Antihyperlipidemic (Statin)",
+    "common_frequency": ["At bedtime (Night)", "Daily (Once a day)"],
+    "common_duration": ["30 days", "90 days"],
+    "warnings": ["Avoid grapefruit juice during treatment."]
+  },
+  {
+    "generic_name": "Omeprazole",
+    "brand_names": ["Omez", "Prilosec", "Omepral", "Omee"],
+    "aliases": ["Omeprazol", "Omez 20"],
+    "dosages": ["10mg", "20mg", "40mg"],
+    "forms": ["Capsule", "Tablet"],
+    "category": "Proton Pump Inhibitor",
+    "common_frequency": ["Daily (Once a day)"],
+    "common_duration": ["14 days", "28 days"],
+    "warnings": ["Swallow whole, do not crush or chew."]
+  },
+  {
+    "generic_name": "Aspirin",
+    "brand_names": ["Ecosprin", "Disprin", "Bayer", "Colsprin"],
+    "aliases": ["Acetylsalicylic Acid", "Ecosprin 75", "Ecosprin 150"],
+    "dosages": ["75mg", "150mg", "325mg", "500mg"],
+    "forms": ["Tablet", "Gastro-resistant Tablet"],
+    "category": "Antiplatelet / Analgesic",
+    "common_frequency": ["Daily (Once a day)"],
+    "common_duration": ["30 days", "90 days"],
+    "warnings": ["Take after food to avoid gastric irritation."]
+  },
+  {
+    "generic_name": "Ibuprofen",
+    "brand_names": ["Brufen", "Advil", "Motrin", "Ibugesic"],
+    "aliases": ["Ibuprophen", "Brufen 400"],
+    "dosages": ["200mg", "400mg", "600mg", "800mg"],
+    "forms": ["Tablet", "Syrup"],
+    "category": "NSAID Analgesic",
+    "common_frequency": ["Three times daily", "Twice daily", "As needed"],
+    "common_duration": ["3 days", "5 days"],
+    "warnings": ["Take with food or milk."]
+  },
+  {
+    "generic_name": "Lisinopril",
+    "brand_names": ["Zestril", "Prinivil", "Listril"],
+    "aliases": ["Lisinopri"],
+    "dosages": ["2.5mg", "5mg", "10mg", "20mg", "40mg"],
+    "forms": ["Tablet"],
+    "category": "ACE Inhibitor (Antihypertensive)",
+    "common_frequency": ["Daily (Once a day)"],
+    "common_duration": ["30 days", "90 days"],
+    "warnings": ["Monitor blood pressure and kidney function."]
+  },
+  {
+    "generic_name": "Amlodipine",
+    "brand_names": ["Amlong", "Stamlo", "Norvasc", "Amlopin"],
+    "aliases": ["Amlodipin", "Amlodipine Besylate"],
+    "dosages": ["2.5mg", "5mg", "10mg"],
+    "forms": ["Tablet"],
+    "category": "Calcium Channel Blocker",
+    "common_frequency": ["Daily (Once a day)"],
+    "common_duration": ["30 days", "90 days"],
+    "warnings": ["May cause mild ankle swelling."]
+  },
+  {
+    "generic_name": "Losartan",
+    "brand_names": ["Repace", "Zaart", "Cozaar", "Losar"],
+    "aliases": ["Losartan Potassium"],
+    "dosages": ["25mg", "50mg", "100mg"],
+    "forms": ["Tablet"],
+    "category": "Angiotensin II Receptor Blocker",
+    "common_frequency": ["Daily (Once a day)"],
+    "common_duration": ["30 days", "90 days"],
+    "warnings": ["Monitor serum potassium levels."]
+  },
+  {
+    "generic_name": "Cetirizine",
+    "brand_names": ["Cetzine", "Zyrtec", "Alerid", "Okacet"],
+    "aliases": ["Cetirizn", "Cetrizine"],
+    "dosages": ["5mg", "10mg"],
+    "forms": ["Tablet", "Syrup"],
+    "category": "Antihistamine",
+    "common_frequency": ["At bedtime (Night)", "Daily (Once a day)"],
+    "common_duration": ["5 days", "10 days"],
+    "warnings": ["May cause drowsiness."]
+  },
+  {
+    "generic_name": "Azithromycin",
+    "brand_names": ["Azithral", "Azee", "Zithromax", "Azicip"],
+    "aliases": ["Azithromucin", "Azithral 500"],
+    "dosages": ["250mg", "500mg"],
+    "forms": ["Tablet", "Suspension"],
+    "category": "Macrolide Antibiotic",
+    "common_frequency": ["Daily (Once a day)"],
+    "common_duration": ["3 days", "5 days"],
+    "warnings": ["Take 1 hour before or 2 hours after meals."]
+  },
+  {
+    "generic_name": "Vitamin D",
+    "brand_names": ["Calcirol", "UPRISE-D3", "Tayo", "Uprise"],
+    "aliases": ["Cholecalciferol", "Vitamin D3"],
+    "dosages": ["1000iu", "2000iu", "60000iu"],
+    "forms": ["Capsule", "Sachet", "Drops"],
+    "category": "Vitamin Supplement",
+    "common_frequency": ["Weekly", "Daily (Once a day)"],
+    "common_duration": ["8 weeks", "12 weeks"],
+    "warnings": ["Take with milk or fatty meal for better absorption."]
+  },
+  {
+    "generic_name": "Metoprolol",
+    "brand_names": ["Betaloc", "Metolar", "Toprol-XL", "Seloken"],
+    "aliases": ["Metoprolol Succinate", "Metoprolol Tartrate"],
+    "dosages": ["12.5mg", "25mg", "50mg", "100mg"],
+    "forms": ["Tablet", "Extended Release Tablet"],
+    "category": "Beta Blocker",
+    "common_frequency": ["Twice daily", "Daily (Once a day)"],
+    "common_duration": ["30 days", "90 days"],
+    "warnings": ["Do not stop abruptly."]
+  },
+  {
+    "generic_name": "Gabapentin",
+    "brand_names": ["Gabapin", "Neurontin", "Gabaneuron"],
+    "aliases": ["Gabapentn"],
+    "dosages": ["100mg", "300mg", "400mg", "600mg"],
+    "forms": ["Capsule", "Tablet"],
+    "category": "Anticonvulsant / Neuropathic Pain",
+    "common_frequency": ["Three times daily", "Twice daily"],
+    "common_duration": ["10 days", "30 days"],
+    "warnings": ["May cause dizziness."]
+  },
+  {
+    "generic_name": "Levothyroxine",
+    "brand_names": ["Thyronorm", "Eltroxin", "Synthroid"],
+    "aliases": ["Thyroxine", "Levothyroxine Sodium"],
+    "dosages": ["12.5mcg", "25mcg", "50mcg", "75mcg", "100mcg"],
+    "forms": ["Tablet"],
+    "category": "Thyroid Hormone Replacement",
+    "common_frequency": ["Daily (Once a day)"],
+    "common_duration": ["30 days", "90 days"],
+    "warnings": ["Take on an empty stomach first thing in the morning."]
+  },
+  {
+    "generic_name": "Ciprofloxacin",
+    "brand_names": ["Ciplox", "Cipro", "Cifran"],
+    "aliases": ["Ciprofloxacn"],
+    "dosages": ["250mg", "500mg", "750mg"],
+    "forms": ["Tablet", "Eye Drops"],
+    "category": "Fluoroquinolone Antibiotic",
+    "common_frequency": ["Twice daily"],
+    "common_duration": ["5 days", "7 days", "14 days"],
+    "warnings": ["Avoid dairy products within 2 hours of dosing."]
+  }
+]

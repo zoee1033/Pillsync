@@ -6,10 +6,10 @@ import EmptyState from "../../components/ui/EmptyState";
 import LoadingSkeleton from "../../components/ui/LoadingSkeleton";
 import {
   getNotifications,
-  markNotificationRead,
-  deleteNotification,
+  performNotificationAction,
 } from "../../services/notificationService";
 import styles from "./Notifications.module.css";
+import api from "../../services/api";
 
 const Notifications = () => {
   const navigate = useNavigate();
@@ -24,7 +24,11 @@ const Notifications = () => {
 
     try {
       const response = await getNotifications();
-      setNotifications(response);
+      console.log("1. API response:", response);
+      console.log(`[TRACE ${new Date().toISOString()}] [STAGE 11: NOTIFICATIONS_JSX_REFRESH] Notifications.jsx loadNotifications() fetched ${response?.length || 0} notifications.`, response);
+      const data = response || [];
+      setNotifications(data);
+      console.log("2. notifications state immediately after setNotifications:", data);
     } catch (error) {
       console.error(error);
       setMessage({
@@ -38,50 +42,71 @@ const Notifications = () => {
 
   useEffect(() => {
     loadNotifications();
+
+    const handleGlobalRefresh = () => {
+      console.log(`[TRACE ${new Date().toISOString()}] Notifications.jsx handleGlobalRefresh triggered by pillsync_refresh_ui event.`);
+      loadNotifications();
+    };
+
+    window.addEventListener("pillsync_refresh_ui", handleGlobalRefresh);
+    return () => {
+      window.removeEventListener("pillsync_refresh_ui", handleGlobalRefresh);
+    };
   }, []);
 
-  const handleMarkRead = async (notificationId) => {
+  const handleAction = async (notification, actionType) => {
     setActionLoading(true);
     setMessage({ type: "", text: "" });
 
     try {
-      const updated = await markNotificationRead(notificationId);
-      setNotifications((prev) =>
-        prev.map((item) => (item.id === updated.id ? updated : item))
-      );
-      setMessage({ type: "success", text: "Notification marked as read." });
+      if (actionType === "delete") {
+        const confirmed = window.confirm("Delete this notification?");
+        if (!confirmed) {
+          setActionLoading(false);
+          return;
+        }
+      }
+
+      const res = await performNotificationAction(notification.id, actionType);
+
+      // Optimistic / immediate state update to prevent stale React UI
+      if (actionType === "delete") {
+        setNotifications((prev) => prev.filter((n) => n.id !== notification.id));
+      } else {
+        setNotifications((prev) =>
+          prev.map((n) =>
+            n.id === notification.id
+              ? (res && typeof res === "object" && res.id ? res : { ...n, is_read: true })
+              : n
+          )
+        );
+      }
+
+      setMessage({
+        type: "success",
+        text:
+          actionType === "taken"
+            ? "Dose marked as taken."
+            : actionType === "skipped"
+              ? "Dose marked as skipped."
+              : actionType === "snooze"
+                ? "Reminder snoozed."
+                : "Notification deleted.",
+      });
+      await loadNotifications();
+      window.dispatchEvent(new CustomEvent("pillsync_refresh_ui"));
     } catch (error) {
       console.error(error);
       setMessage({
         type: "error",
-        text: error.response?.data?.detail || "Unable to mark notification as read.",
+        text: error.response?.data?.detail || `Failed to perform ${actionType}.`,
       });
     } finally {
       setActionLoading(false);
     }
   };
 
-  const handleDelete = async (notificationId) => {
-    const confirmed = window.confirm("Delete this notification?");
-    if (!confirmed) return;
-
-    setActionLoading(true);
-    setMessage({ type: "", text: "" });
-
-    try {
-      await deleteNotification(notificationId);
-      setNotifications((prev) => prev.filter((item) => item.id !== notificationId));
-      setMessage({ type: "success", text: "Notification deleted." });
-    } catch (error) {
-      console.error(error);
-      setMessage({
-        type: "error",
-        text: error.response?.data?.detail || "Unable to delete notification.",
-      });
-    } finally {
-      setActionLoading(false);
-    }
-  };
+  console.log("3. notifications state during render:", notifications);
 
   return (
     <div className={styles.notificationsPage}>
@@ -89,7 +114,7 @@ const Notifications = () => {
         <div>
           <h2 className={styles.pageTitle}>Notifications</h2>
           <p className={styles.pageSubtitle}>
-            View all reminder notifications created by the backend and mark them read.
+            View and manage all reminder notifications across your treatments.
           </p>
         </div>
       </div>
@@ -106,9 +131,25 @@ const Notifications = () => {
             <div className={styles.summaryLabel}>Total</div>
             <div className={styles.summaryValue}>{notifications.length}</div>
           </div>
-          <Button variant="outline" onClick={loadNotifications} disabled={loading}>
-            Refresh
-          </Button>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                try {
+                  await api.put("/notifications/read");
+                  loadNotifications();
+                } catch (e) {
+                  console.error(e);
+                }
+              }}
+              disabled={loading}
+            >
+              Mark All as Read
+            </Button>
+            <Button variant="outline" onClick={loadNotifications} disabled={loading}>
+              Refresh
+            </Button>
+          </div>
         </div>
       </Card>
 
@@ -135,44 +176,76 @@ const Notifications = () => {
           />
         ) : (
           <div className={styles.notificationList}>
-            {notifications.map((notification) => (
-              <div
-                key={notification.id}
-                className={`${styles.notificationItem} ${notification.is_read ? styles.read : ""}`}
-              >
-                <div className={styles.notificationHeader}>
-                  <div>
-                    <div className={styles.notificationTitle}>{notification.title}</div>
-                    <div className={styles.notificationType}>{notification.notification_type}</div>
-                  </div>
-                  <div className={styles.notificationMeta}>
-                    <span>{new Date(notification.created_at).toLocaleString()}</span>
-                    <span>{notification.is_sent ? "Sent" : "Pending"}</span>
-                  </div>
-                </div>
+            {notifications.map((notification) => {
+              console.log("4. notification.id:", notification.id);
+              console.log("5. notification.is_read:", notification.is_read);
+              console.log("6. notification.is_sent:", notification.is_sent);
+              console.log("7. notification.action_status:", notification.action_status);
 
-                <div className={styles.notificationMessage}>{notification.message}</div>
+              return (
+                <div
+                  key={notification.id}
+                  className={`${styles.notificationItem} ${notification.is_read ? styles.read : ""}`}
+                >
+                  <div className={styles.notificationHeader}>
+                    <div>
+                      <div className={styles.notificationTitle}>{notification.title}</div>
+                      <div className={styles.notificationType}>{notification.notification_type}</div>
+                    </div>
+                    <div className={styles.notificationMeta}>
+                      <span>{new Date(notification.created_at).toLocaleString()}</span>
+                      <span className={notification.is_read ? styles.statusBadgeRead : styles.statusBadgeUnread}>
+                        {notification.is_read ? "✓ Action Completed / Read" : notification.is_sent ? "Sent" : "Pending"}
+                      </span>
+                    </div>
+                  </div>
 
-                <div className={styles.itemActions}>
-                  {!notification.is_read && (
+                  <div className={styles.notificationMessage}>{notification.message}</div>
+
+                  <div className={styles.itemActions}>
+                    {!notification.is_read && notification.notification_type === "Refill" ? (
+                      <Button
+                        variant="primary"
+                        onClick={() => navigate("/medicines")}
+                      >
+                        🛒 Restock Now
+                      </Button>
+                    ) : !notification.is_read ? (
+                      <>
+                        <Button
+                          variant="outline"
+                          onClick={() => handleAction(notification, "taken")}
+                          disabled={actionLoading}
+                        >
+                          ✅ Taken
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => handleAction(notification, "skipped")}
+                          disabled={actionLoading}
+                        >
+                          ⏭ Skipped
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => handleAction(notification, "snooze")}
+                          disabled={actionLoading}
+                        >
+                          😴 Snooze
+                        </Button>
+                      </>
+                    ) : null}
                     <Button
-                      variant="outline"
-                      onClick={() => handleMarkRead(notification.id)}
+                      variant="secondary"
+                      onClick={() => handleAction(notification, "delete")}
                       disabled={actionLoading}
                     >
-                      Mark as read
+                      🗑 Delete
                     </Button>
-                  )}
-                  <Button
-                    variant="secondary"
-                    onClick={() => handleDelete(notification.id)}
-                    disabled={actionLoading}
-                  >
-                    Delete
-                  </Button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </Card>

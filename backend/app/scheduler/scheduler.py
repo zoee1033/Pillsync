@@ -6,15 +6,16 @@ scheduler = BackgroundScheduler()
 
 
 def start_scheduler():
-
-    scheduler.add_job(
-        reminder_job,
-        trigger="interval",
-        minutes=1,
-        id="medicine_reminders",
-        replace_existing=True,
-    )
-
-    scheduler.start()
-
-    print("⏰ APScheduler initialized and started successfully", flush=True)
+    if not scheduler.running:
+        scheduler.add_job(
+            reminder_job,
+            trigger="interval",
+            seconds=1,
+            id="medicine_reminders",
+            max_instances=3,
+            coalesce=True,
+            misfire_grace_time=15,
+            replace_existing=True,
+        )
+        scheduler.start()
+        print("⏰ APScheduler initialized with 1-second interval and max_instances=3", flush=True)

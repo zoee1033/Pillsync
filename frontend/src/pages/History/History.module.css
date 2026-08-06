@@ -109,6 +109,26 @@
   gap: 4px;
 }
 
+.statusStarted {
+  background-color: rgba(49, 151, 149, 0.15);
+  color: #2C7A7B;
+}
+
+.statusActive {
+  background-color: rgba(72, 187, 120, 0.15);
+  color: #2F855A;
+}
+
+.statusMedicineAdded {
+  background-color: rgba(66, 153, 225, 0.15);
+  color: #2B6CB0;
+}
+
+.statusReminderTriggered {
+  background-color: rgba(236, 201, 75, 0.2);
+  color: #D69E2E;
+}
+
 .statusCompleted {
   background-color: rgba(56, 161, 105, 0.15);
   color: #276749;

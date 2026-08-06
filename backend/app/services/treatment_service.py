@@ -38,6 +38,20 @@ def create_treatment(
     db.commit()
     db.refresh(new_treatment)
 
+    # Log initial treatment creation history
+    start_status = HistoryStatus.TREATMENT_STARTED.value
+    if not is_duplicate_history(db, current_user.id, new_treatment.id, start_status):
+        hist = History(
+            user_id=current_user.id,
+            treatment_id=new_treatment.id,
+            scheduled_time=datetime.utcnow(),
+            action_time=datetime.utcnow(),
+            status=start_status,
+            notes=f"Treatment '{new_treatment.disease_name}' started."
+        )
+        db.add(hist)
+        db.commit()
+
     if new_treatment.status == HistoryStatus.COMPLETED.value:
         if not is_duplicate_history(db, current_user.id, new_treatment.id, HistoryStatus.COMPLETED.value):
             hist = History(
@@ -47,6 +61,18 @@ def create_treatment(
                 action_time=datetime.utcnow(),
                 status=HistoryStatus.COMPLETED.value,
                 notes="Treatment completed."
+            )
+            db.add(hist)
+            db.commit()
+    elif new_treatment.status == "Active" or new_treatment.status == HistoryStatus.TREATMENT_ACTIVE.value:
+        if not is_duplicate_history(db, current_user.id, new_treatment.id, HistoryStatus.TREATMENT_ACTIVE.value):
+            hist = History(
+                user_id=current_user.id,
+                treatment_id=new_treatment.id,
+                scheduled_time=datetime.utcnow(),
+                action_time=datetime.utcnow(),
+                status=HistoryStatus.TREATMENT_ACTIVE.value,
+                notes="Treatment is active."
             )
             db.add(hist)
             db.commit()
@@ -147,6 +173,30 @@ def update_treatment(
                 action_time=datetime.utcnow(),
                 status=HistoryStatus.CANCELLED.value,
                 notes="Treatment cancelled."
+            )
+            db.add(hist)
+            db.commit()
+    elif treatment.status == HistoryStatus.EXPIRED.value:
+        if not is_duplicate_history(db, current_user.id, treatment.id, HistoryStatus.EXPIRED.value):
+            hist = History(
+                user_id=current_user.id,
+                treatment_id=treatment.id,
+                scheduled_time=datetime.utcnow(),
+                action_time=datetime.utcnow(),
+                status=HistoryStatus.EXPIRED.value,
+                notes="Treatment expired."
+            )
+            db.add(hist)
+            db.commit()
+    elif treatment.status in ["Active", HistoryStatus.TREATMENT_ACTIVE.value]:
+        if not is_duplicate_history(db, current_user.id, treatment.id, HistoryStatus.TREATMENT_ACTIVE.value):
+            hist = History(
+                user_id=current_user.id,
+                treatment_id=treatment.id,
+                scheduled_time=datetime.utcnow(),
+                action_time=datetime.utcnow(),
+                status=HistoryStatus.TREATMENT_ACTIVE.value,
+                notes="Treatment active."
             )
             db.add(hist)
             db.commit()

@@ -10,7 +10,8 @@ import Card from "../../components/common/Card";
 import { FcGoogle } from "react-icons/fc";
 import { FaApple } from "react-icons/fa";
 
-import { registerUser } from "../../services/authService";
+import { registerUser, googleLogin, appleLogin } from "../../services/authService";
+import { saveToken } from "../../utils/token";
 
 const RegisterIllustration = () => (
   <div className="register-illustration-container">
@@ -71,65 +72,96 @@ export default function Register() {
   });
 
   const handleChange = (e) => {
-
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
-
   };
 
   const handleSubmit = async (e) => {
-
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
-
       alert("Passwords do not match");
-
       return;
-
     }
 
     try {
-
       setLoading(true);
 
       const response = await registerUser({
-
         full_name: formData.fullName,
-
         email: formData.email,
-
         phone: formData.phone,
-
         password: formData.password,
-
         confirm_password: formData.confirmPassword,
-
         role: role,
-
       });
 
       alert(response.message);
-
       navigate("/login");
 
     } catch (error) {
-
       alert(
         error.response?.data?.detail ||
         "Registration Failed"
       );
-
     } finally {
-
       setLoading(false);
-
     }
-
   };
-   return (
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setLoading(true);
+      const email = prompt("Enter your Google Account email address:", "user@google.com");
+      if (!email) {
+        setLoading(false);
+        return;
+      }
+      const response = await googleLogin({
+        email: email,
+        full_name: email.split("@")[0],
+        provider: "google"
+      });
+
+      saveToken(response.access_token);
+      localStorage.setItem("user", JSON.stringify(response.user));
+      alert("Google Sign-In Successful");
+      navigate("/dashboard");
+    } catch (error) {
+      alert(error.response?.data?.detail || "Google Sign-In Failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    try {
+      setLoading(true);
+      const email = prompt("Enter your Apple ID email address:", "user@icloud.com");
+      if (!email) {
+        setLoading(false);
+        return;
+      }
+      const response = await appleLogin({
+        email: email,
+        full_name: email.split("@")[0],
+        provider: "apple"
+      });
+
+      saveToken(response.access_token);
+      localStorage.setItem("user", JSON.stringify(response.user));
+      alert("Apple Sign-In Successful");
+      navigate("/dashboard");
+    } catch (error) {
+      alert(error.response?.data?.detail || "Apple Sign-In Failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
     <AuthLayout leftContent={<RegisterIllustration />}>
       <Card className="auth-card reg-card">
 
@@ -252,6 +284,8 @@ export default function Register() {
             variant="outline"
             className="social-btn"
             type="button"
+            onClick={handleGoogleSignIn}
+            disabled={loading}
           >
             <FcGoogle size={20} />
             <span>Continue with Google</span>
@@ -261,6 +295,8 @@ export default function Register() {
             variant="outline"
             className="social-btn dark-btn"
             type="button"
+            onClick={handleAppleSignIn}
+            disabled={loading}
           >
             <FaApple size={20} />
             <span>Continue with Apple</span>

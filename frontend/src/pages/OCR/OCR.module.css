@@ -1,0 +1,457 @@
+.container {
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-text-main, #1e293b);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  color: var(--color-text-muted, #64748b);
+  font-size: 0.95rem;
+}
+
+/* Save Mode Selection Section */
+.saveModeSection {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  border: 1px solid #E7ECE9;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  margin-bottom: 2rem;
+}
+
+.modeLabel {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1F2937;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.radioGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.radioOption {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 1.1rem 1.25rem;
+  border-radius: 12px;
+  border: 2px solid #E7ECE9;
+  background-color: #F8FAF8;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.radioOption:hover {
+  border-color: #0F8B6D;
+  background-color: #E6F4F0;
+}
+
+.radioOption input[type="radio"] {
+  accent-color: #0F8B6D;
+  width: 18px;
+  height: 18px;
+  margin-top: 3px;
+  cursor: pointer;
+}
+
+.radioSelected {
+  border-color: #0F8B6D !important;
+  background-color: #E6F4F0 !important;
+  box-shadow: 0 0 0 3px rgba(15, 139, 109, 0.12);
+}
+
+.radioContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.radioTitle {
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #1F2937;
+}
+
+.radioDesc {
+  font-size: 0.825rem;
+  color: #6B7280;
+}
+
+/* Treatment Form & Select Cards */
+.formCard {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  border: 1px solid #E7ECE9;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  margin-bottom: 2rem;
+  animation: fadeInExpand 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeInExpand {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cardSectionHeading {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1F2937;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #E7ECE9;
+}
+
+.headingIcon {
+  color: #0F8B6D;
+  font-size: 1.35rem;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.25rem;
+}
+
+.fullWidth {
+  grid-column: 1 / -1;
+}
+
+.textarea {
+  padding: 0.65rem 0.85rem;
+  border: 1px solid #E7ECE9;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: #1F2937;
+  outline: none;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.15s ease;
+}
+
+.textarea:focus {
+  border-color: #0F8B6D;
+  box-shadow: 0 0 0 3px rgba(15, 139, 109, 0.1);
+}
+
+.emptyNotice {
+  color: #C96E55;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Upload Dropzone */
+.dropzone {
+  border: 2px dashed #cbd5e1;
+  border-radius: 16px;
+  padding: 2.5rem 2rem;
+  text-align: center;
+  background-color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  margin-bottom: 2rem;
+  position: relative;
+}
+
+.dropzone:hover, .dragOver {
+  border-color: #0F8B6D;
+  background-color: #E6F4F0;
+}
+
+.uploadIcon {
+  font-size: 3rem;
+  color: #0F8B6D;
+  margin-bottom: 1rem;
+}
+
+.uploadText {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1F2937;
+  margin-bottom: 0.5rem;
+}
+
+.uploadSubtext {
+  font-size: 0.875rem;
+  color: #6B7280;
+  margin-bottom: 1.5rem;
+}
+
+.btnGroup {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.uploadBtn, .cameraBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.15s ease;
+}
+
+.uploadBtn {
+  background-color: #0F8B6D;
+  color: #ffffff;
+}
+
+.uploadBtn:hover {
+  background-color: #0A614C;
+}
+
+.cameraBtn {
+  background-color: #F8FAF8;
+  color: #1F2937;
+  border: 1px solid #E7ECE9;
+}
+
+.cameraBtn:hover {
+  background-color: #E6F4F0;
+}
+
+.fileInput {
+  display: none;
+}
+
+.previewSection {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.previewImage {
+  max-width: 180px;
+  max-height: 140px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 1px solid #E7ECE9;
+}
+
+.progressContainer {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 2.5rem 2rem;
+  text-align: center;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 5px solid #E7ECE9;
+  border-top-color: #0F8B6D;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1.5rem auto;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.progressBarBg {
+  width: 100%;
+  max-width: 400px;
+  height: 10px;
+  background-color: #E7ECE9;
+  border-radius: 10px;
+  margin: 1rem auto;
+  overflow: hidden;
+}
+
+.progressBarFill {
+  height: 100%;
+  background: linear-gradient(90deg, #0F8B6D, #22C55E);
+  border-radius: 10px;
+  transition: width 0.3s ease;
+}
+
+.errorNotice {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  color: #991b1b;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 500;
+}
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.editableCard {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  border: 1px solid #E7ECE9;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #E7ECE9;
+}
+
+.cardTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1F2937;
+}
+
+.confidenceBadge {
+  background-color: #E6F4F0;
+  color: #0F8B6D;
+  padding: 0.25rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.label {
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: #6B7280;
+}
+
+.input, .select {
+  padding: 0.6rem 0.85rem;
+  border: 1px solid #E7ECE9;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: #1F2937;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.input:focus, .select:focus {
+  border-color: #0F8B6D;
+  box-shadow: 0 0 0 3px rgba(15, 139, 109, 0.1);
+}
+
+/* Automation Options Section */
+.optionsSection {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  border: 1px solid #E7ECE9;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  margin-bottom: 2rem;
+}
+
+.optionsTitle {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1F2937;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.checkboxGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.checkboxOption {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+}
+
+.checkboxOption input[type="checkbox"] {
+  accent-color: #0F8B6D;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.saveSection {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.saveBtn {
+  background-color: #0F8B6D;
+  color: #ffffff;
+  border: none;
+  padding: 0.85rem 2rem;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 0 4px 6px -1px rgba(15, 139, 109, 0.3);
+  transition: background-color 0.15s ease;
+}
+
+.saveBtn:hover {
+  background-color: #0A614C;
+}

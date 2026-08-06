@@ -1,7 +1,7 @@
 import api from "./api";
 
 export const getAllReminders = async () => {
-  const response = await api.get("/reminders");
+  const response = await api.get("/reminders/");
   return response.data;
 };
 
@@ -16,7 +16,7 @@ export const getRemindersByMedicine = async (medicineId) => {
 };
 
 export const createReminder = async (reminderData) => {
-  const response = await api.post("/reminders", reminderData);
+  const response = await api.post("/reminders/", reminderData);
   return response.data;
 };
 

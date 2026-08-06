@@ -48,13 +48,16 @@ class TreatmentBase(BaseModel):
     def validate_status(cls, value):
         allowed = [
             "Active",
+            "Paused",
             "Completed",
-            "Cancelled"
+            "Archived",
+            "Cancelled",
+            "Expired"
         ]
 
         if value not in allowed:
             raise ValueError(
-                "Status must be Active, Completed or Cancelled."
+                "Status must be Active, Paused, Completed, Archived, Cancelled, or Expired."
             )
 
         return value
@@ -106,13 +109,16 @@ class TreatmentUpdate(BaseModel):
 
         allowed = [
             "Active",
+            "Paused",
             "Completed",
-            "Cancelled"
+            "Archived",
+            "Cancelled",
+            "Expired"
         ]
 
         if value not in allowed:
             raise ValueError(
-                "Status must be Active, Completed or Cancelled."
+                "Status must be Active, Paused, Completed, Archived, Cancelled, or Expired."
             )
 
         return value

@@ -20,9 +20,10 @@ const DashboardLayout = () => {
     const loadUserProfile = async () => {
       try {
         const response = await getProfile();
-        if (response && response.data) {
-          setUser(response.data);
-          localStorage.setItem("user", JSON.stringify(response.data));
+        const userObj = response?.data || response;
+        if (userObj && (userObj.id || userObj.email || userObj.full_name)) {
+          setUser(userObj);
+          localStorage.setItem("user", JSON.stringify(userObj));
         }
       } catch (error) {
         console.error("Failed to load user profile in layout:", error);

@@ -6,13 +6,18 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: '#4F9CF9',
-        'primary-green': '#4ADE80',
-        background: '#F8FAFC',
+        primary: '#0F8B6D',
+        'primary-green': '#0F8B6D',
+        secondary: '#C96E55',
+        accent: '#C96E55',
+        background: '#F8FAF8',
         card: '#FFFFFF',
-        'text-primary': '#1E293B',
-        'text-secondary': '#64748B',
-        border: '#E2E8F0',
+        'text-primary': '#1F2937',
+        'text-secondary': '#6B7280',
+        border: '#E7ECE9',
+        success: '#22C55E',
+        warning: '#F59E0B',
+        danger: '#EF4444',
       },
       borderRadius: {
         xl: '18px',

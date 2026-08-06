@@ -17,6 +17,8 @@ import Medicines from "../pages/Medicines/Medicines";
 import Reminders from "../pages/Reminders/Reminders";
 import History from "../pages/History/History";
 import Notifications from "../pages/Notifications/Notifications";
+import OCR from "../pages/OCR/OCR";
+import Analytics from "../pages/Analytics/Analytics";
 
 import ProtectedRoute from "./ProtectedRoute";
 import DashboardLayout from "../components/dashboard/DashboardLayout";
@@ -78,6 +80,8 @@ const AppRoutes = () => {
           }
         >
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/ocr" element={<OCR />} />
+          <Route path="/analytics" element={<Analytics />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/treatments" element={<Treatments />} />
           <Route path="/medicines" element={<Medicines />} />
@@ -86,6 +90,7 @@ const AppRoutes = () => {
           <Route path="/history" element={<History />} />
           <Route path="/settings" element={<Settings />} />
         </Route>
+
 
       </Routes>
     </Router>
