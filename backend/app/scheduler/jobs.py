@@ -1,3 +1,5 @@
+import time
+import logging
 from datetime import date, datetime
 from app.database import SessionLocal
 from app.models.enums import HistoryStatus
@@ -5,9 +7,13 @@ from app.models.history import History
 from app.models.treatment import Treatment
 from app.scheduler.reminder_engine import process_due_reminders
 from app.services.history_service import is_duplicate_history
+from app.services.notification_service import cleanup_old_notifications
+
+logger = logging.getLogger("SCHEDULER_JOBS")
 
 
 def check_expired_treatments(db):
+    """Scans active treatments and marks expired ones."""
     today = date.today()
     expired_treatments = (
         db.query(Treatment)
@@ -31,6 +37,7 @@ def check_expired_treatments(db):
             )
             db.add(hist)
     db.commit()
+    return len(expired_treatments)
 
 
 def check_refill_notifications(db):
@@ -51,6 +58,7 @@ def check_refill_notifications(db):
         .all()
     )
 
+    created_count = 0
     for med in active_medicines:
         user_id = med.treatment.user_id
         reminders = db.query(Reminder).filter(Reminder.medicine_id == med.id, Reminder.status == "Active").all()
@@ -75,7 +83,6 @@ def check_refill_notifications(db):
 
         if notif_data:
             title, message = notif_data
-            # Prevent duplicate notifications for the same medicine on the same day
             existing_today = (
                 db.query(Notification)
                 .filter(
@@ -99,15 +106,86 @@ def check_refill_notifications(db):
                 )
                 db.add(new_notif)
                 db.commit()
+                created_count += 1
+
+    return created_count
+
+
+# ==========================================================
+# Dedicated Modular APScheduler Jobs
+# ==========================================================
+
+def reminder_scheduler_job():
+    """Independent Reminder Scheduler Job."""
+    from app.config import settings
+    if settings.ENABLE_VERBOSE_SCHEDULER_LOGS:
+        logger.debug(f"Running reminder scheduler at {datetime.utcnow().isoformat()}...")
+    db = SessionLocal()
+    try:
+        process_due_reminders(db)
+    except Exception as e:
+        logger.error(f"Error in reminder scheduler job: {e}", exc_info=True)
+    finally:
+        db.close()
+
+
+def refill_scheduler_job():
+    """Independent Refill Notification Scheduler Job."""
+    from app.config import settings
+    if settings.ENABLE_VERBOSE_SCHEDULER_LOGS:
+        logger.debug(f"Running refill scheduler at {datetime.utcnow().isoformat()}...")
+    db = SessionLocal()
+    try:
+        count = check_refill_notifications(db)
+        if count > 0:
+            logger.info(f"Refill scheduler processed. Generated {count} new refill alert(s).")
+    except Exception as e:
+        logger.error(f"Error in refill scheduler job: {e}", exc_info=True)
+    finally:
+        db.close()
+
+
+def expired_treatment_job():
+    """Independent Expired Treatment Cleanup Job."""
+    from app.config import settings
+    if settings.ENABLE_VERBOSE_SCHEDULER_LOGS:
+        logger.debug(f"Running expired treatment cleanup at {datetime.utcnow().isoformat()}...")
+    db = SessionLocal()
+    try:
+        count = check_expired_treatments(db)
+        if count > 0:
+            logger.info(f"Expired treatment cleanup processed {count} treatment(s).")
+    except Exception as e:
+        logger.error(f"Error in expired treatment job: {e}", exc_info=True)
+    finally:
+        db.close()
+
+
+def notification_cleanup_job():
+    """Independent Old Notification Cleanup Job."""
+    from app.config import settings
+    if settings.ENABLE_VERBOSE_SCHEDULER_LOGS:
+        logger.debug(f"Running notification cleanup job at {datetime.utcnow().isoformat()}...")
+    db = SessionLocal()
+    try:
+        deleted = cleanup_old_notifications(db, days=30)
+        if deleted > 0:
+            logger.info(f"Notification cleanup job deleted {deleted} old notification(s).")
+    except Exception as e:
+        logger.error(f"Error in notification cleanup job: {e}", exc_info=True)
+    finally:
+        db.close()
+
+
+def scheduler_health_check_job():
+    """Independent Scheduler Health Check Pulse."""
+    from app.config import settings
+    if settings.ENABLE_VERBOSE_SCHEDULER_LOGS:
+        logger.debug(f"Health check pulse at {datetime.utcnow().isoformat()} - Scheduler active.")
 
 
 def reminder_job():
-    db = SessionLocal()
-
-    try:
-        print(f"⏰ APScheduler executing reminder job at {datetime.now()}", flush=True)
-        process_due_reminders(db)
-        check_expired_treatments(db)
-        check_refill_notifications(db)
-    finally:
-        db.close()
+    """Backward compatible composite job execution."""
+    reminder_scheduler_job()
+    expired_treatment_job()
+    refill_scheduler_job()

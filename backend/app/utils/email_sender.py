@@ -37,10 +37,16 @@ def send_otp_email(to_email: str, otp_code: str) -> bool:
             server.login(smtp_user, smtp_password)
             server.send_message(msg)
             server.quit()
-            print(f"📧 [SMTP] OTP email successfully sent to {to_email}")
+            import logging
+            logger = logging.getLogger("EMAIL_SENDER")
+            logger.info(f"[SMTP] OTP email successfully sent to {to_email}")
             return True
         except Exception as e:
-            print(f"⚠️ [SMTP Error] Failed to send email via SMTP: {e}. Falling back to dev logger.")
+            import logging
+            logger = logging.getLogger("EMAIL_SENDER")
+            logger.warning(f"[SMTP Error] Failed to send email via SMTP: {e}. Falling back to dev logger.")
     
-    print(f"📧 [DEV LOG] OTP for {to_email}: {otp_code}")
+    import logging
+    logger = logging.getLogger("EMAIL_SENDER")
+    logger.info(f"[DEV LOG] OTP for {to_email}: {otp_code}")
     return True

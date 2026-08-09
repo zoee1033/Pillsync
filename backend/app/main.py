@@ -10,7 +10,7 @@ from app.database import Base, engine
 from app.models import *
 
 # Scheduler
-from app.scheduler.scheduler import start_scheduler
+from app.scheduler.scheduler import start_scheduler, stop_scheduler
 
 # Routers
 from app.routes.auth_routes import router as auth_router
@@ -23,10 +23,15 @@ from app.routes.notification_routes import router as notification_router
 from app.routes.device_token_routes import router as device_token_router
 from app.routes.ocr_routes import router as ocr_router
 from app.routes.analytics_routes import router as analytics_router
+from app.routes.websocket_routes import router as websocket_router
+from app.routes.sse_routes import router as sse_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from app.logging_config import setup_logging
+    setup_logging()
+
     # Create database tables
     Base.metadata.create_all(bind=engine)
 
@@ -52,12 +57,13 @@ async def lifespan(app: FastAPI):
     # Start background scheduler
     start_scheduler()
 
-    print("✅ PillSync Backend Started")
-    print("✅ Scheduler Started")
+    import logging
+    logging.info("PillSync Backend & Scheduler initialized successfully.")
 
     yield
 
-    print("🛑 PillSync Backend Stopped")
+    stop_scheduler()
+    logging.info("PillSync Backend Stopped.")
 
 
 app = FastAPI(
@@ -89,6 +95,8 @@ app.include_router(notification_router)
 app.include_router(device_token_router)
 app.include_router(ocr_router)
 app.include_router(analytics_router)
+app.include_router(websocket_router)
+app.include_router(sse_router)
 
 
 

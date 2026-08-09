@@ -72,7 +72,8 @@ def validate_medicine_name(name: str) -> tuple[bool, str]:
                 # Found candidate match in medical database
                 return True, ""
     except Exception as e:
-        print(f"⚠️ [RxNorm API Warning] Query failed/timed out: {e}. Falling back to strict structural validation.")
+        import logging
+        logging.getLogger("MEDICINE_VALIDATOR").warning(f"[RxNorm API Warning] Query failed/timed out: {e}. Falling back to strict structural validation.")
 
     # Fallback heuristic: If name contains at least 3 alphabetic chars and doesn't match obvious junk,
     # but RxNorm returned nothing and local dictionary didn't match, verify word structure.

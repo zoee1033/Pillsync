@@ -559,7 +559,7 @@ const OCR = () => {
                   <span className={styles.cardTitle}>Medicine #{idx + 1}</span>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                     <span className={styles.confidenceBadge} style={{ background: med.needs_review ? "#fef3c7" : "#dcfce7", color: med.needs_review ? "#b45309" : "#166534" }}>
-                      {Math.round((med.confidence || 0.95) * 100)}% Match {med.needs_review ? "⚠️ Review" : "✓ High Confidence"}
+                      {Math.round((med.confidence || 0.95) * 100)}% Confidence {med.needs_review ? "⚠️ Review" : "✓ High"}
                     </span>
                     <button
                       onClick={() => handleRemoveCard(idx)}
@@ -591,13 +591,13 @@ const OCR = () => {
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <label className={styles.label}>Dosage:</label>
                     <span style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 600 }}>
-                      Conf: {med.field_confidence?.dosage_confidence || 95}%
+                      Conf: {med.field_confidence?.dosage_confidence != null ? `${med.field_confidence.dosage_confidence}%` : "N/A"}
                     </span>
                   </div>
                   <input
                     type="text"
                     className={styles.input}
-                    style={{ borderColor: (med.field_confidence?.dosage_confidence || 95) < 80 ? "#f59e0b" : "#cbd5e1" }}
+                    style={{ borderColor: med.field_confidence?.dosage_confidence && med.field_confidence.dosage_confidence < 80 ? "#f59e0b" : "#cbd5e1" }}
                     value={med.dosage}
                     onChange={(e) => handleMedicineChange(idx, "dosage", e.target.value)}
                     placeholder="e.g. 500mg"
@@ -618,7 +618,7 @@ const OCR = () => {
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <label className={styles.label}>Frequency:</label>
                     <span style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 600 }}>
-                      Conf: {med.field_confidence?.frequency_confidence || 95}%
+                      Conf: {med.field_confidence?.frequency_confidence != null ? `${med.field_confidence.frequency_confidence}%` : "N/A"}
                     </span>
                   </div>
                   <select
@@ -641,13 +641,13 @@ const OCR = () => {
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <label className={styles.label}>Duration:</label>
                     <span style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 600 }}>
-                      Conf: {med.field_confidence?.duration_confidence || 95}%
+                      Conf: {med.field_confidence?.duration_confidence != null ? `${med.field_confidence.duration_confidence}%` : "N/A"}
                     </span>
                   </div>
                   <input
                     type="text"
                     className={styles.input}
-                    style={{ borderColor: (med.field_confidence?.duration_confidence || 95) < 80 ? "#f59e0b" : "#cbd5e1" }}
+                    style={{ borderColor: med.field_confidence?.duration_confidence && med.field_confidence.duration_confidence < 80 ? "#f59e0b" : "#cbd5e1" }}
                     value={med.duration}
                     onChange={(e) => handleMedicineChange(idx, "duration", e.target.value)}
                   />

@@ -5,9 +5,10 @@ import numpy as np
 from typing import List, Dict, Tuple, Optional
 from PIL import Image
 from app.services.ocr.image_analyzer import analyze_image_quality, ImageQualityAnalysis
+from app.services.ocr.block_segmenter import segment_prescription_blocks
 
 DEBUG_OCR = os.getenv("DEBUG_OCR", "false").lower() == "true"
-DEBUG_DIR = r"C:\Users\Zoya Ahmed\.gemini\antigravity-ide\brain\e01d9b7f-5d21-49c6-ac2e-416e78b14199\scratch\ocr_debug"
+DEBUG_DIR = os.getenv("DEBUG_DIR", os.path.join(os.path.dirname(__file__), "..", "..", "..", "debug"))
 
 
 def super_resolution_scale(gray: np.ndarray, scale: int) -> np.ndarray:
@@ -61,7 +62,6 @@ def stroke_enhancement(gray: np.ndarray, is_handwritten: bool) -> np.ndarray:
     if not is_handwritten:
         return gray
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
-    # Morphological closing to bridge broken pen strokes
     closed = cv2.morphologyEx(gray, cv2.MORPH_CLOSE, kernel)
     return closed
 
@@ -77,7 +77,7 @@ def threshold_adaptive_gaussian(gray: np.ndarray) -> np.ndarray:
 
 
 def roi_detection_crop(gray: np.ndarray) -> np.ndarray:
-    """Stage 12: Auto-crop ROI prescription region ignoring outer table/phone borders."""
+    """Stage 12: Auto-crop ROI prescription region ignoring outer table/phone borders with strict safeguards."""
     try:
         thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
         contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -85,8 +85,17 @@ def roi_detection_crop(gray: np.ndarray) -> np.ndarray:
             return gray
         c = max(contours, key=cv2.contourArea)
         x, y, w, h = cv2.boundingRect(c)
-        if w > 100 and h > 50 and (w * h) > 0.2 * (gray.shape[0] * gray.shape[1]):
-            return gray[y:y+h, x:x+w]
+        img_h, img_w = gray.shape[:2]
+        total_area = img_h * img_w
+        crop_area = w * h
+
+        aspect_ratio = w / float(h) if h > 0 else 0.0
+        if crop_area < 0.35 * total_area or crop_area > 0.98 * total_area:
+            return gray
+        if w < 150 or h < 150 or aspect_ratio < 0.25 or aspect_ratio > 4.5:
+            return gray
+
+        return gray[y:y+h, x:x+w]
     except Exception:
         pass
     return gray
@@ -96,14 +105,14 @@ def process_image_adaptive(image_bytes: bytes) -> Tuple[List[Tuple[str, Image.Im
     """
     Intelligent Adaptive Preprocessing Engine:
     1. Analyzes image quality metrics (blur, contrast, brightness, skew, handwriting).
-    2. Generates multiple optimized, enhanced variants.
-    3. Saves debug stages if DEBUG_OCR is enabled.
+    2. Runs medicine block segmentation layer.
+    3. Generates multiple optimized, enhanced variants.
+    4. Saves debug stages if DEBUG_OCR is enabled.
     """
     nparr = np.frombuffer(image_bytes, np.uint8)
     img_bgr = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
     if img_bgr is None:
-        # Fallback for unsupported stream
         pil_img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
         img_bgr = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
 
@@ -114,7 +123,7 @@ def process_image_adaptive(image_bytes: bytes) -> Tuple[List[Tuple[str, Image.Im
     scaled = super_resolution_scale(gray, analysis.recommended_scale)
     deskewed = auto_deskew(scaled, analysis.skew_angle) if analysis.has_skew else scaled
 
-    # 2. ROI Crop
+    # 2. ROI Crop with Safeguards
     cropped = roi_detection_crop(deskewed)
 
     # 3. Illumination Correction
@@ -129,16 +138,20 @@ def process_image_adaptive(image_bytes: bytes) -> Tuple[List[Tuple[str, Image.Im
     else:
         sharpened = noise_reduction(clahe_img, analysis.is_handwritten)
 
-    # 6. Stroke Repair & Threshold Variants
+    # 6. Stroke Repair & Medicine Block Segmentation
     stroke_enhanced = stroke_enhancement(sharpened, analysis.is_handwritten)
     otsu_variant = threshold_otsu(stroke_enhanced)
     adaptive_variant = threshold_adaptive_gaussian(stroke_enhanced)
 
-    # Build Multi-Version Pipelines (Streamlined for max speed & accuracy)
+    # 7. Medicine Block Segmentation Layer
+    crops, seg_meta = segment_prescription_blocks(stroke_enhanced, debug=DEBUG_OCR, debug_dir=DEBUG_DIR)
+
     variants: List[Tuple[str, np.ndarray]] = [
         ("scaled_gray", scaled),
         ("clahe_enhanced", clahe_img),
-        ("stroke_enhanced", stroke_enhanced)
+        ("stroke_enhanced", stroke_enhanced),
+        ("otsu_variant", otsu_variant),
+        ("adaptive_variant", adaptive_variant)
     ]
 
     # Convert to PIL Image for Tesseract

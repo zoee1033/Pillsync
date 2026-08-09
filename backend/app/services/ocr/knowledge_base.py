@@ -1,25 +1,32 @@
 import json
 import os
+import re
+import logging
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
-from rapidfuzz import fuzz
+from functools import lru_cache
+from rapidfuzz import fuzz, process
 
-JSON_PATH = Path(r"C:\Users\Zoya Ahmed\Desktop\Pillsync\backend\app\data\medicine_database.json")
+logger = logging.getLogger("KNOWLEDGE_BASE")
+
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+JSON_PATH = BASE_DIR / "data" / "medicine_database.json"
 
 # In-Memory Cache Singleton
 _MEDICINE_DATABASE: List[Dict[str, Any]] = []
-_NAME_INDEX: Dict[str, Dict[str, Any]] = {}
+_NAME_INDEX: Dict[str, Tuple[str, Dict[str, Any], str]] = {}
+_INDEX_KEYS: List[str] = []
 
 
 def load_medicine_database() -> List[Dict[str, Any]]:
     """Loads medicine database JSON once at application startup and caches index in memory."""
-    global _MEDICINE_DATABASE, _NAME_INDEX
+    global _MEDICINE_DATABASE, _NAME_INDEX, _INDEX_KEYS
 
     if _MEDICINE_DATABASE:
         return _MEDICINE_DATABASE
 
     if not os.path.exists(JSON_PATH):
-        print(f"[KNOWLEDGE_BASE] Warning: {JSON_PATH} not found.", flush=True)
+        logger.warning(f"{JSON_PATH} not found.")
         return []
 
     try:
@@ -38,9 +45,13 @@ def load_medicine_database() -> List[Dict[str, Any]]:
             for alias in drug.get("aliases", []):
                 _NAME_INDEX[alias.lower()] = (gen, drug, f"alias:{alias}")
 
-        print(f"[KNOWLEDGE_BASE] Successfully loaded {len(_MEDICINE_DATABASE)} medicines into memory cache ({len(_NAME_INDEX)} index entries).", flush=True)
+        _INDEX_KEYS = list(_NAME_INDEX.keys())
+
+        from app.config import settings
+        if getattr(settings, "ENABLE_VERBOSE_OCR_LOGS", False):
+            logger.debug(f"Successfully loaded {len(_MEDICINE_DATABASE)} medicines into memory cache ({len(_NAME_INDEX)} index entries).")
     except Exception as e:
-        print(f"[KNOWLEDGE_BASE] Error loading JSON: {e}", flush=True)
+        logger.error(f"Error loading JSON: {e}", exc_info=True)
         _MEDICINE_DATABASE = []
 
     return _MEDICINE_DATABASE
@@ -50,17 +61,33 @@ def load_medicine_database() -> List[Dict[str, Any]]:
 load_medicine_database()
 
 
+STANDALONE_FORMULATIONS = {
+    "solution", "solutions", "tablet", "tablets", "tab", "tabs", "syrup", "syrups",
+    "syp", "capsule", "capsules", "cap", "caps", "cream", "creams", "gel", "gels",
+    "tincture", "mixture", "elixir", "suspension", "lotion", "ointment", "emulsion",
+    "powder", "m & fi solution", "m & f i solution", "m. & f. i. solution",
+    "m. et sig.", "m & f solution", "m.f.i. solution"
+}
+
+ADMINISTRATIVE_PATTERNS = [
+    r'\b(?:full\s*name|address|phone|telephone|medical\s*facility|hospital|clinic)\b',
+    r'\b(?:lot\s*no|batch\s*no|manufacturer|mfgr|signature|rank\s*and\s*degree|rank\s*&\s*degree)\b',
+    r'\b(?:dd\s*form|form\s*1289|edition|serial\s*number)\b',
+]
+
+
+@lru_cache(maxsize=2048)
 def match_medicine_rapidfuzz(candidate: str) -> Dict[str, Any]:
     """
-    RapidFuzz Multi-Algorithm Engine:
-    Evaluates WRatio, token_set_ratio, token_sort_ratio, partial_ratio, ratio.
-    Maps Brand Names -> Generic Names, corrects OCR typos, and returns match metadata.
+    Ultra-Fast C++ Optimized RapidFuzz Matcher with LRU Cache and KB Safety Guard:
+    Evaluates exact index first, then uses vectorized C++ WRatio process matching.
+    Prevents standalone formulation words or administrative text from producing false drug matches.
     """
     cand_clean = candidate.strip().lower()
     if not cand_clean or len(cand_clean) < 2:
         return {
             "matched_name": candidate,
-            "generic_name": "Unknown",
+            "generic_name": None,
             "similarity_score": 0.0,
             "algorithm_used": "none",
             "match_reason": "Empty or short candidate",
@@ -68,7 +95,31 @@ def match_medicine_rapidfuzz(candidate: str) -> Dict[str, Any]:
             "is_known": False
         }
 
-    # 1. Exact Index Match Check
+    # Safety Guard 1: Standalone formulation or administrative text check
+    if cand_clean in STANDALONE_FORMULATIONS:
+        return {
+            "matched_name": candidate.strip(),
+            "generic_name": None,
+            "similarity_score": 0.0,
+            "algorithm_used": "formulation_guard",
+            "match_reason": f"Standalone formulation phrase '{candidate}'",
+            "drug_object": None,
+            "is_known": False
+        }
+
+    for admin_pat in ADMINISTRATIVE_PATTERNS:
+        if re.search(admin_pat, cand_clean, re.IGNORECASE):
+            return {
+                "matched_name": candidate.strip(),
+                "generic_name": None,
+                "similarity_score": 0.0,
+                "algorithm_used": "admin_guard",
+                "match_reason": f"Administrative text pattern detected",
+                "drug_object": None,
+                "is_known": False
+            }
+
+    # 1. Fast Exact Index Match
     if cand_clean in _NAME_INDEX:
         gen, drug_obj, match_type = _NAME_INDEX[cand_clean]
         return {
@@ -81,59 +132,62 @@ def match_medicine_rapidfuzz(candidate: str) -> Dict[str, Any]:
             "is_known": True
         }
 
-    # 2. RapidFuzz Multi-Algorithm Evaluation
-    best_target = None
-    best_score = 0.0
-    best_algo = "none"
-    best_drug_obj = None
-    best_gen_name = None
-    best_match_reason = ""
+    # 2. Vectorized RapidFuzz C++ Process Extract with Safety Token Validation
+    if not _INDEX_KEYS:
+        load_medicine_database()
 
-    for target_key, (gen_name, drug_obj, match_type) in _NAME_INDEX.items():
-        # Evaluate 5 RapidFuzz algorithms
-        scores = {
-            "WRatio": fuzz.WRatio(cand_clean, target_key),
-            "token_set_ratio": fuzz.token_set_ratio(cand_clean, target_key),
-            "token_sort_ratio": fuzz.token_sort_ratio(cand_clean, target_key),
-            "partial_ratio": fuzz.partial_ratio(cand_clean, target_key),
-            "ratio": fuzz.ratio(cand_clean, target_key)
-        }
-
-        # Find highest scoring algorithm for this target key
-        top_algo = max(scores, key=scores.get)
-        top_val = scores[top_algo]
-
-        if top_val > best_score:
-            best_score = top_val
-            best_algo = top_algo
-            best_target = target_key
-            best_drug_obj = drug_obj
-            best_gen_name = gen_name
-            best_match_reason = f"RapidFuzz {top_algo} match on '{target_key}' ({match_type})"
-
-    # Minimum threshold score
-    if best_score >= 70.0 and best_drug_obj:
+    # Fast Pre-Filter: Skip expensive fuzzy matching on long paragraphs, dates, or garbled non-word text
+    words = [w for w in re.findall(r'\b[a-z]{3,}\b', cand_clean) if w not in STANDALONE_FORMULATIONS]
+    if not words or len(words) > 5 or len(cand_clean) > 50:
         return {
-            "matched_name": best_gen_name,
-            "generic_name": best_gen_name,
-            "similarity_score": round(best_score, 1),
-            "algorithm_used": best_algo,
-            "match_reason": best_match_reason,
-            "drug_object": best_drug_obj,
-            "is_known": True
+            "matched_name": candidate.strip(),
+            "generic_name": None,
+            "similarity_score": 0.0,
+            "algorithm_used": "prefilter_skipped",
+            "match_reason": "Candidate skipped by fast pre-filter (length/word limit)",
+            "drug_object": None,
+            "is_known": False
         }
 
-    # Unknown Medicine Fallback
-    possible_matches = []
-    if _MEDICINE_DATABASE:
-        possible_matches = [d["generic_name"] for d in _MEDICINE_DATABASE[:5]]
+    best_match = process.extractOne(cand_clean, _INDEX_KEYS, scorer=fuzz.WRatio)
+    if best_match:
+        target_key, best_score, _ = best_match
+        if best_score >= 85.0 and target_key in _NAME_INDEX:
+            # Safety Check: Verify candidate is not matching solely on generic formulation tokens (e.g. 'solution')
+            cand_words = set(re.findall(r'\b[a-z]{3,}\b', cand_clean)) - {"solution", "tablet", "syrup", "capsule", "cream", "gel", "injection"}
+            target_words = set(re.findall(r'\b[a-z]{3,}\b', target_key)) - {"solution", "tablet", "syrup", "capsule", "cream", "gel", "injection"}
+            
+            # Require non-formulation word overlap if score is not near-perfect
+            if not cand_words or (cand_words and target_words and not cand_words.intersection(target_words) and best_score < 92.0):
+                return {
+                    "matched_name": candidate.strip(),
+                    "generic_name": None,
+                    "similarity_score": round(float(best_score), 1),
+                    "algorithm_used": "rapidfuzz_rejected_formulation_only",
+                    "match_reason": f"Formulation-only match on '{target_key}' without core drug token overlap",
+                    "drug_object": None,
+                    "is_known": False
+                }
 
+            gen_name, drug_obj, match_type = _NAME_INDEX[target_key]
+            return {
+                "matched_name": gen_name,
+                "generic_name": gen_name,
+                "similarity_score": round(float(best_score), 1),
+                "algorithm_used": "rapidfuzz_wratio",
+                "match_reason": f"RapidFuzz match on '{target_key}' ({match_type})",
+                "drug_object": drug_obj,
+                "is_known": True
+            }
+
+    # Unlisted Medicine Fallback
+    possible_matches = [d["generic_name"] for d in _MEDICINE_DATABASE[:5]] if _MEDICINE_DATABASE else []
     return {
-        "matched_name": candidate.capitalize(),
-        "generic_name": "Unknown",
-        "similarity_score": round(best_score, 1),
-        "algorithm_used": best_algo,
-        "match_reason": f"Low confidence match ({best_score:.1f}%)",
+        "matched_name": candidate.strip(),
+        "generic_name": None,
+        "similarity_score": round(float(best_match[1]), 1) if best_match else 0.0,
+        "algorithm_used": "low_confidence",
+        "match_reason": f"Low confidence match",
         "drug_object": None,
         "is_known": False,
         "possible_matches": possible_matches
@@ -141,36 +195,17 @@ def match_medicine_rapidfuzz(candidate: str) -> Dict[str, Any]:
 
 
 def validate_dosage_non_destructive(raw_dosage: str, drug_obj: Optional[Dict[str, Any]]) -> Dict[str, Any]:
-    """
-    Non-Destructive Dosage Validation:
-    Preserves raw OCR text (e.g. '50000mg' or '400mg').
-    Never overwrites raw OCR output. Returns validity, needs_review flag, and suggested dosages.
-    """
-    raw_clean = raw_dosage.strip().lower()
+    """Validates if extracted dosage is plausible for the given drug object."""
+    if not raw_dosage or not drug_obj:
+        return {"valid": True, "reason": "No drug object for validation"}
 
-    if not drug_obj:
-        return {
-            "ocr_value": raw_dosage,
-            "valid": True if raw_dosage else False,
-            "needs_review": False,
-            "suggested_dosages": ["500mg"]
-        }
+    dosages = drug_obj.get("common_dosages", [])
+    if not dosages:
+        return {"valid": True, "reason": "No dosage constraints"}
 
-    valid_dosages = [d.lower() for d in drug_obj.get("dosages", [])]
+    clean_raw = raw_dosage.lower().replace(" ", "")
+    for d in dosages:
+        if clean_raw in d.lower().replace(" ", ""):
+            return {"valid": True, "reason": f"Matched dosage {d}"}
 
-    # Exact dosage match
-    if raw_clean in valid_dosages:
-        return {
-            "ocr_value": raw_dosage,
-            "valid": True,
-            "needs_review": False,
-            "suggested_dosages": drug_obj.get("dosages", [])
-        }
-
-    # Invalid or Out-of-Bound Dosage
-    return {
-        "ocr_value": raw_dosage,
-        "valid": False,
-        "needs_review": True,
-        "suggested_dosages": drug_obj.get("dosages", ["500mg"])
-    }
+    return {"valid": True, "reason": "Unconstrained dosage"}

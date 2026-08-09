@@ -272,7 +272,28 @@ export const initializeFirebaseMessaging = async () => {
 
 let shownNotificationIds = new Set();
 let isSyncStarted = false;
-let lastPollTimestamp = Date.now();
+let isInitialFetchComplete = false;
+let maxSeenNotificationId = 0;
+let lastPollTimestamp = 0;
+let pollWorker = null;
+let pollIntervalId = null;
+
+export const stopNotificationSync = () => {
+  if (pollWorker) {
+    try {
+      pollWorker.postMessage("stop");
+      pollWorker.terminate();
+    } catch (e) {}
+    pollWorker = null;
+  }
+  if (pollIntervalId) {
+    clearInterval(pollIntervalId);
+    pollIntervalId = null;
+  }
+  isSyncStarted = false;
+  isInitialFetchComplete = false;
+  console.log(`[TRACE ${new Date().toISOString()}] stopNotificationSync() executed. Polling timer cleaned up.`);
+};
 
 export const startNotificationSync = () => {
   if (typeof window === "undefined") return;
@@ -288,12 +309,16 @@ export const startNotificationSync = () => {
   const checkUnread = async (reason = "INTERVAL_TICK") => {
     const now = Date.now();
     const elapsed = now - lastPollTimestamp;
-    lastPollTimestamp = now;
-    const timeStr = new Date(now).toLocaleTimeString("en-US", { hour12: false }) + "." + String(now % 1000).padStart(3, "0");
 
-    console.log(
-      `[POLL_TIMING] Timestamp: ${timeStr} | Reason: ${reason} | Elapsed: ${elapsed}ms | Expected: 4000ms | Actual: ${elapsed}ms`
-    );
+    // Prevent race conditions: throttle rapid duplicate checks triggered within 800ms by multi-lifecycle events
+    if (isInitialFetchComplete && elapsed < 800 && reason !== "INITIAL_LAUNCH") {
+      console.log(`[TRACE ${new Date().toISOString()}] [POLL_THROTTLE] Throttling rapid check (${reason}). Elapsed: ${elapsed}ms < 800ms`);
+      return;
+    }
+    lastPollTimestamp = now;
+
+    const timeStr = new Date(now).toLocaleTimeString("en-US", { hour12: false }) + "." + String(now % 1000).padStart(3, "0");
+    console.log(`[POLL_TIMING] Timestamp: ${timeStr} | Reason: ${reason} | Elapsed: ${elapsed}ms`);
 
     try {
       const authToken = getAuthToken();
@@ -303,33 +328,51 @@ export const startNotificationSync = () => {
       const list = res.data;
 
       if (Array.isArray(list)) {
-        console.log(`[TRACE ${new Date().toISOString()}] [STAGE 5: UNREAD_POLLING_CHECK] checkUnread() returned ${list.length} unread notification(s). IDs: [${list.map(i => i.id).join(",")}]`);
-        let hasNew = false;
-        for (const item of list) {
-          if (!shownNotificationIds.has(item.id)) {
-            console.log(`[TRACE ${new Date().toISOString()}] [STAGE 10: DUPLICATE_PROTECTION_CHECK] New notification detected ID=${item.id}. Triggering toast...`);
+        console.log(`[TRACE ${new Date().toISOString()}] [STAGE 5: UNREAD_POLLING_CHECK] checkUnread(${reason}) returned ${list.length} unread notification(s). IDs: [${list.map(i => i.id).join(",")}]`);
+
+        let hasNewForUI = false;
+
+        if (!isInitialFetchComplete) {
+          // INITIAL LAUNCH: Seed shownNotificationIds & cursor with historical unread notifications so popups ARE NEVER REPLAYED!
+          for (const item of list) {
             shownNotificationIds.add(item.id);
-            hasNew = true;
+            if (item.id > maxSeenNotificationId) {
+              maxSeenNotificationId = item.id;
+            }
+          }
+          isInitialFetchComplete = true;
+          console.log(`[TRACE ${new Date().toISOString()}] [INITIAL_LAUNCH_SEED] Initialized notification cursor. maxSeenNotificationId=${maxSeenNotificationId}, Seeded ${shownNotificationIds.size} historical IDs. Popups suppressed.`);
+          hasNewForUI = true; // Dispatch refresh event to update bell icon and unread badge count!
+        } else {
+          // SUBSEQUENT TICKS: Trigger browser toast ONLY for NEW notifications arriving after app startup
+          for (const item of list) {
+            if (!shownNotificationIds.has(item.id) && item.id > maxSeenNotificationId) {
+              console.log(`[TRACE ${new Date().toISOString()}] [STAGE 10: NEW_NOTIFICATION_TOAST] New notification detected ID=${item.id}. Triggering toast...`);
+              shownNotificationIds.add(item.id);
+              maxSeenNotificationId = Math.max(maxSeenNotificationId, item.id);
+              hasNewForUI = true;
 
-            const title = item.title || "💊 Pill Reminder";
-            const body = item.message || "Medication reminder due";
-            const notifTag = `notif_${item.id}`;
-            const notifData = { notification_id: item.id, reminder_id: item.reminder_id };
+              const title = item.title || "💊 Pill Reminder";
+              const body = item.message || "Medication reminder due";
+              const notifTag = `notif_${item.id}`;
+              const notifData = { notification_id: item.id, reminder_id: item.reminder_id };
 
-            const isRefillAlert = item.notification_type?.toLowerCase() === "refill" ||
-              Boolean(item.title?.toLowerCase().includes("refill")) ||
-              Boolean(item.title?.toLowerCase().includes("out of stock")) ||
-              Boolean(item.message?.toLowerCase().includes("out of stock")) ||
-              Boolean(item.message?.toLowerCase().includes("remaining")) ||
-              Boolean(item.message?.toLowerCase().includes("no tablets"));
+              const isRefillAlert = item.notification_type?.toLowerCase() === "refill" ||
+                Boolean(item.title?.toLowerCase().includes("refill")) ||
+                Boolean(item.title?.toLowerCase().includes("out of stock")) ||
+                Boolean(item.message?.toLowerCase().includes("out of stock")) ||
+                Boolean(item.message?.toLowerCase().includes("remaining")) ||
+                Boolean(item.message?.toLowerCase().includes("no tablets"));
 
-            await showBrowserToast(title, body, notifTag, notifData, isRefillAlert);
-          } else {
-            console.log(`[TRACE ${new Date().toISOString()}] [STAGE 10: DUPLICATE_PROTECTION_CHECK] Notification ID=${item.id} already shown. Skipping duplicate toast.`);
+              await showBrowserToast(title, body, notifTag, notifData, isRefillAlert);
+            } else {
+              shownNotificationIds.add(item.id);
+            }
           }
         }
-        if (hasNew) {
-          window.dispatchEvent(new CustomEvent("pillsync_refresh_ui"));
+
+        if (hasNewForUI) {
+          window.dispatchEvent(new CustomEvent("pillsync_refresh_ui", { detail: { unread_count: list.length } }));
         }
       }
     } catch (err) {
@@ -340,7 +383,7 @@ export const startNotificationSync = () => {
   // Immediate first check
   checkUnread("INITIAL_LAUNCH");
 
-  // 1. Web Worker Background Thread Timer (Immune to Firefox/Chrome Tab Throttling)
+  // 1. Web Worker Background Thread Timer (Single Timer Instance)
   try {
     const workerCode = `
       let timer = null;
@@ -357,14 +400,14 @@ export const startNotificationSync = () => {
       };
     `;
     const blob = new Blob([workerCode], { type: "application/javascript" });
-    const worker = new Worker(URL.createObjectURL(blob));
-    worker.onmessage = () => {
+    pollWorker = new Worker(URL.createObjectURL(blob));
+    pollWorker.onmessage = () => {
       checkUnread("WEB_WORKER_TICK");
     };
-    worker.postMessage("start");
+    pollWorker.postMessage("start");
   } catch (wErr) {
     console.warn("Web Worker timer creation failed, falling back to setInterval:", wErr);
-    setInterval(() => checkUnread("SET_INTERVAL_FALLBACK"), 4000);
+    pollIntervalId = setInterval(() => checkUnread("SET_INTERVAL_FALLBACK"), 4000);
   }
 
   // 2. Lifecycle Event Listeners for Instant Triggering
