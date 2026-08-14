@@ -6,3 +6,4 @@ from .history import History
 from .notification import Notification
 from .device_token import DeviceToken
 from .otp import PasswordResetOTP
+from .caregiver_patient import CaregiverPatient

@@ -90,31 +90,45 @@ const DosageAnalysisModal = ({ medicineId, onClose }) => {
               </div>
 
               <div className={styles.timelineSlots}>
-                {data.visual_timeline.map((slot, idx) => (
-                  <div key={idx} className={`${styles.slotCard} ${styles[slot.status]}`}>
-                    <div>
-                      <strong style={{ color: "#0f172a" }}>{slot.slot}</strong> ({slot.time})
+                {data.visual_timeline && data.visual_timeline.length > 0 ? (
+                  data.visual_timeline.map((slot, idx) => (
+                    <div key={idx} className={`${styles.slotCard} ${slot.status ? styles[slot.status] : ''}`}>
+                      <div>
+                        <strong style={{ color: "#0f172a" }}>
+                          {slot.slot && slot.time && slot.slot !== slot.time ? `${slot.slot} (${slot.time})` : (slot.time || slot.slot)}
+                        </strong>
+                      </div>
+
+                      {slot.status === "Completed" && (
+                        <span className={styles.badgeCompleted}>
+                          <TbCheck size={14} style={{ verticalAlign: "middle" }} /> Completed
+                        </span>
+                      )}
+
+                      {slot.status === "Missed" && (
+                        <span className={styles.badgeMissed}>
+                          <TbAlertTriangle size={14} style={{ verticalAlign: "middle" }} /> Missed
+                        </span>
+                      )}
+
+                      {slot.status === "Skipped" && (
+                        <span className={styles.badgeMissed}>
+                          <TbAlertTriangle size={14} style={{ verticalAlign: "middle" }} /> Skipped
+                        </span>
+                      )}
+
+                      {slot.status === "Upcoming" && (
+                        <span className={styles.badgeUpcoming}>
+                          <TbClock size={14} style={{ verticalAlign: "middle" }} /> Upcoming
+                        </span>
+                      )}
                     </div>
-
-                    {slot.status === "Completed" && (
-                      <span className={styles.badgeCompleted}>
-                        <TbCheck size={14} style={{ verticalAlign: "middle" }} /> Completed
-                      </span>
-                    )}
-
-                    {slot.status === "Missed" && (
-                      <span className={styles.badgeMissed}>
-                        <TbAlertTriangle size={14} style={{ verticalAlign: "middle" }} /> Missed
-                      </span>
-                    )}
-
-                    {slot.status === "Upcoming" && (
-                      <span className={styles.badgeUpcoming}>
-                        <TbClock size={14} style={{ verticalAlign: "middle" }} /> Upcoming
-                      </span>
-                    )}
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p style={{ color: "#64748b", fontStyle: "italic", padding: "0.5rem 0" }}>
+                    No active reminders configured for this medicine.
+                  </p>
+                )}
               </div>
             </div>
           </div>

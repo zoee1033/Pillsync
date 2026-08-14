@@ -14,7 +14,7 @@ const firebaseConfig = {
   measurementId: "G-VF1M18W5GQ",
 };
 
-const VAPID_KEY = null;
+const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY || null;
 
 let app = null;
 let messaging = null;

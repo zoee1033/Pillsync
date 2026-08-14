@@ -1,4 +1,4 @@
-﻿.reminderPage {
+.reminderPage {
   min-height: 100%;
 }
 
@@ -144,7 +144,21 @@
 
 .reminderList {
   display: grid;
-  gap: 18px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  width: 100%;
+}
+
+@media (max-width: 1200px) {
+  .reminderList {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .reminderList {
+    grid-template-columns: 1fr;
+  }
 }
 
 .reminderItem {

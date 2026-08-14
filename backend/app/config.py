@@ -20,6 +20,15 @@ class Settings(BaseSettings):
     VISION_PROVIDER: str = "gemma"
     FUSION_MODE: str = "always"
 
+    # SMTP / Email Settings
+    SMTP_HOST: str = os.getenv("SMTP_HOST", "")
+    SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USER: str = os.getenv("SMTP_USER", "")
+    SMTP_USERNAME: str = os.getenv("SMTP_USERNAME", "")
+    SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
+    SMTP_SENDER: str = os.getenv("SMTP_SENDER", "")
+    SMTP_FROM_EMAIL: str = os.getenv("SMTP_FROM_EMAIL", "")
+
     OPENROUTER_API_KEY: str = ""
     GEMMA_MODEL: str = "google/gemma-3-27b-it"
     GEMMA_TIMEOUT: int = 20

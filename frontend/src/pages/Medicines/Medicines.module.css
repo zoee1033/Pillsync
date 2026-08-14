@@ -1,4 +1,4 @@
-﻿.medicinePage {
+.medicinePage {
   min-height: 100%;
 }
 
@@ -28,6 +28,11 @@
   padding: 28px;
   box-shadow: var(--shadow-soft);
   border-radius: var(--radius-card);
+  min-width: 0;
+}
+
+.listCard {
+  container-type: inline-size;
 }
 
 .cardHeader {
@@ -73,9 +78,17 @@
 
 .gridLayout {
   display: grid;
-  grid-template-columns: 360px 1fr;
+  grid-template-columns: 1fr;
   gap: 24px;
   margin-top: 24px;
+}
+
+.hasForm {
+  grid-template-columns: 360px minmax(0, 1fr);
+}
+
+.fullWidth {
+  grid-template-columns: 1fr;
 }
 
 .form {
@@ -147,7 +160,33 @@
 
 .medicineList {
   display: grid;
-  gap: 18px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  width: 100%;
+}
+
+@container (max-width: 860px) {
+  .medicineList {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container (max-width: 540px) {
+  .medicineList {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1200px) {
+  .medicineList {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .medicineList {
+    grid-template-columns: 1fr;
+  }
 }
 
 .medicineItem {
@@ -164,12 +203,14 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 14px;
+  flex-wrap: wrap;
 }
 
 .medicineName {
   font-size: 17px;
   font-weight: 700;
   color: var(--color-text-dark);
+  word-break: break-word;
 }
 
 .medicineSubtext {

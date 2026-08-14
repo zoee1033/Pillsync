@@ -25,6 +25,8 @@ from app.routes.ocr_routes import router as ocr_router
 from app.routes.analytics_routes import router as analytics_router
 from app.routes.websocket_routes import router as websocket_router
 from app.routes.sse_routes import router as sse_router
+from app.routes.caregiver_routes import router as caregiver_router
+from app.routes.admin_routes import router as admin_router
 
 
 @asynccontextmanager
@@ -97,6 +99,8 @@ app.include_router(ocr_router)
 app.include_router(analytics_router)
 app.include_router(websocket_router)
 app.include_router(sse_router)
+app.include_router(caregiver_router)
+app.include_router(admin_router)
 
 
 

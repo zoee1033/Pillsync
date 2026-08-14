@@ -287,8 +287,15 @@ def get_refill_predictions(db: Session, current_user: User):
     for med in medicines:
         reminders = db.query(Reminder).filter(Reminder.medicine_id == med.id, Reminder.status == "Active").all()
 
-        dose_match = re.search(r'(\d+)', med.dosage or "1")
-        dose_per_intake = int(dose_match.group(1)) if dose_match else 1
+        dose_per_intake = 1
+        if med.dosage:
+            tab_match = re.search(r'(\d+)\s*(?:tablets?|tabs?|caps?|capsules?|pills?|units?|puffs?)\b', med.dosage, re.IGNORECASE)
+            if tab_match:
+                dose_per_intake = int(tab_match.group(1))
+            else:
+                num_match = re.search(r'^\s*(\d+)\s*$', med.dosage)
+                if num_match:
+                    dose_per_intake = int(num_match.group(1))
         if dose_per_intake <= 0:
             dose_per_intake = 1
 
@@ -296,32 +303,58 @@ def get_refill_predictions(db: Session, current_user: User):
         daily_consumption = dose_per_intake * times_per_day
         remaining_tablets = max(0, med.quantity)
 
-        remaining_days = int(remaining_tablets / daily_consumption) if daily_consumption > 0 else 30
+        # 1. Check instructions for explicit duration (e.g. "3 days")
+        parsed_duration = None
+        if med.instructions:
+            dur_match = re.search(r'(?:duration:?\s*|for\s*|^|\b)(\d+)\s*(?:days?|d)\b', med.instructions, re.IGNORECASE)
+            if dur_match:
+                parsed_duration = int(dur_match.group(1))
 
-        refill_dt = now + timedelta(days=remaining_days)
-        refill_date_str = refill_dt.strftime("%d %b")
+        # 2. Check treatment start_date and end_date for remaining treatment duration
+        if parsed_duration is None:
+            treatment = med.treatment or db.query(Treatment).filter(Treatment.id == med.treatment_id).first()
+            if treatment and treatment.end_date:
+                try:
+                    today = date.today()
+                    t_days = (treatment.end_date - today).days
+                    if t_days > 0:
+                        parsed_duration = t_days
+                except Exception:
+                    pass
 
-        # 4-Tier Refill Status Classification
-        if remaining_days > 15:
+        # 3. Determine remaining_days and treatment_duration
+        if parsed_duration is not None and parsed_duration > 0:
+            remaining_days = parsed_duration
+            treatment_duration = parsed_duration
+        else:
+            if daily_consumption > 0:
+                remaining_days = max(1, int(remaining_tablets / daily_consumption))
+            elif remaining_tablets > 0:
+                remaining_days = remaining_tablets
+            else:
+                remaining_days = 1
+            treatment_duration = remaining_days
+
+        # 4. Status Category Classification: required_quantity = treatment_duration * daily_consumption
+        required_quantity = treatment_duration * daily_consumption
+        if remaining_tablets >= required_quantity:
             status_category = "Healthy"
             progress_color = "Green"
             hex_color = "#10B981"
             badge_icon = "🟢"
-        elif 8 <= remaining_days <= 15:
-            status_category = "Refill Soon"
+        elif remaining_tablets >= required_quantity * 0.5:
+            status_category = "Needs Refill"
             progress_color = "Yellow"
             hex_color = "#F59E0B"
             badge_icon = "🟡"
-        elif 4 <= remaining_days <= 7:
-            status_category = "Urgent"
-            progress_color = "Orange"
-            hex_color = "#F97316"
-            badge_icon = "🟠"
         else:
             status_category = "Critical"
             progress_color = "Red"
             hex_color = "#EF4444"
             badge_icon = "🔴"
+
+        refill_dt = now + timedelta(days=remaining_days)
+        refill_date_str = refill_dt.strftime("%d %b")
 
         # Stock ratio percentage (assuming 30 or current max stock)
         estimated_initial_stock = max(remaining_tablets, 30)
@@ -356,7 +389,7 @@ def get_refill_predictions(db: Session, current_user: User):
 
 def get_dosage_analysis(medicine_id: int, db: Session, current_user: User):
     """
-    Returns dosage breakdown, dose execution stats, and visual timeline per time slot.
+    Returns dosage breakdown, dose execution stats, and exact stored reminder schedule timeline per medicine.
     """
     medicine = get_medicine_by_id(medicine_id, db, current_user)
     history_records = db.query(History).filter(History.medicine_id == medicine_id).all()
@@ -367,19 +400,67 @@ def get_dosage_analysis(medicine_id: int, db: Session, current_user: User):
 
     total_doses = completed_doses + missed_doses + skipped_doses + max(0, medicine.quantity)
 
-    # Time slot visual timeline (Morning, Afternoon, Night)
-    from datetime import datetime
-    now_hour = datetime.now().hour
+    # Fetch ONLY actual reminders associated with THIS medicine_id
+    from app.models.reminder import Reminder
+    reminders = (
+        db.query(Reminder)
+        .filter(Reminder.medicine_id == medicine_id)
+        .order_by(Reminder.reminder_time)
+        .all()
+    )
 
-    morning_status = "Completed" if completed_doses > 0 else ("Missed" if now_hour > 12 else "Upcoming")
-    afternoon_status = "Completed" if completed_doses > 1 else ("Missed" if now_hour > 17 else "Upcoming")
-    night_status = "Upcoming" if now_hour < 21 else "Completed"
+    timeline = []
+    for r in reminders:
+        t_val = r.reminder_time
+        if not t_val:
+            continue
 
-    timeline = [
-        {"slot": "Morning", "time": "08:00 AM", "status": morning_status},
-        {"slot": "Afternoon", "time": "02:00 PM", "status": afternoon_status},
-        {"slot": "Night", "time": "08:00 PM", "status": night_status}
-    ]
+        if isinstance(t_val, str):
+            try:
+                parts = t_val.split(":")
+                h, m = int(parts[0]), int(parts[1])
+            except Exception:
+                formatted_time = t_val
+                h, m = None, None
+        elif hasattr(t_val, "hour") and hasattr(t_val, "minute"):
+            h, m = t_val.hour, t_val.minute
+        else:
+            formatted_time = str(t_val)
+            h, m = None, None
+
+        if h is not None and m is not None:
+            ampm = "AM" if h < 12 else "PM"
+            h12 = h % 12
+            if h12 == 0:
+                h12 = 12
+            formatted_time = f"{h12}:{m:02d} {ampm}"
+
+        # Fetch actual latest history record associated with THIS specific reminder
+        rel_hist = (
+            db.query(History)
+            .filter(History.reminder_id == r.id)
+            .order_by(History.action_time.desc(), History.id.desc())
+            .first()
+        )
+
+        status_str = ""
+        if rel_hist and rel_hist.status:
+            h_stat = rel_hist.status.capitalize()
+            if h_stat in ["Taken", "Completed"]:
+                status_str = "Completed"
+            elif h_stat in ["Missed"]:
+                status_str = "Missed"
+            elif h_stat in ["Skipped"]:
+                status_str = "Skipped"
+            else:
+                status_str = h_stat
+
+        timeline.append({
+            "slot": formatted_time,
+            "time": formatted_time,
+            "status": status_str,
+            "reminder_id": r.id
+        })
 
     return {
         "medicine_id": medicine.id,

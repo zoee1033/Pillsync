@@ -118,6 +118,8 @@ def request_password_reset_otp(db: Session, email: str):
             detail="No account found with this email address."
         )
 
+    now = datetime.now(timezone.utc)
+
     # Rate limiting check: check if an active OTP was requested in the last 60 seconds
     recent_otp = (
         db.query(PasswordResetOTP)
@@ -129,8 +131,7 @@ def request_password_reset_otp(db: Session, email: str):
         .first()
     )
 
-    now = datetime.now(timezone.utc)
-    if recent_otp and recent_otp.created_at:
+    if recent_otp and recent_otp.created_at and isinstance(recent_otp.created_at, datetime):
         created_time = recent_otp.created_at
         if created_time.tzinfo is None:
             created_time = created_time.replace(tzinfo=timezone.utc)
@@ -140,7 +141,19 @@ def request_password_reset_otp(db: Session, email: str):
                 detail="Please wait a minute before requesting another OTP."
             )
 
-    # Generate 6-digit OTP
+    # Invalidate any previously generated unused OTPs for this user
+    previous_otps = (
+        db.query(PasswordResetOTP)
+        .filter(
+            PasswordResetOTP.email == email,
+            PasswordResetOTP.is_used == False
+        )
+        .all()
+    )
+    for prev in previous_otps:
+        prev.is_used = True
+
+    # Generate cryptographically secure 6-digit OTP
     otp_code = f"{secrets.randbelow(900000) + 100000}"
     expires_at = now + timedelta(minutes=10)
 
@@ -153,7 +166,12 @@ def request_password_reset_otp(db: Session, email: str):
     db.add(otp_record)
     db.commit()
 
-    send_otp_email(email, otp_code)
+    email_sent = send_otp_email(email, otp_code)
+    if not email_sent:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to send OTP email. Please try again later or check email settings."
+        )
 
     return {"message": "OTP sent to your registered email address."}
 
@@ -171,6 +189,20 @@ def verify_password_reset_otp(db: Session, email: str, otp: str):
     )
 
     if not otp_record:
+        used_otp = (
+            db.query(PasswordResetOTP)
+            .filter(
+                PasswordResetOTP.email == email,
+                PasswordResetOTP.otp_code == otp,
+                PasswordResetOTP.is_used == True
+            )
+            .first()
+        )
+        if used_otp:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="OTP has already been used. Please request a new one."
+            )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid OTP code."
@@ -195,6 +227,12 @@ def reset_password_with_otp(db: Session, email: str, otp: str, new_password: str
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Passwords do not match."
+        )
+
+    if len(new_password) < 6:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 6 characters long."
         )
 
     verify_password_reset_otp(db, email, otp)

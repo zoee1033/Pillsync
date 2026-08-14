@@ -63,23 +63,49 @@ def check_refill_notifications(db):
         user_id = med.treatment.user_id
         reminders = db.query(Reminder).filter(Reminder.medicine_id == med.id, Reminder.status == "Active").all()
 
-        dose_match = re.search(r'(\d+)', med.dosage or "1")
-        dose_per_intake = int(dose_match.group(1)) if dose_match else 1
-        daily_cons = dose_per_intake * (len(reminders) if reminders else 1)
-        rem_days = int(max(0, med.quantity) / daily_cons) if daily_cons > 0 else 30
+        dose_per_intake = 1
+        if med.dosage:
+            tab_match = re.search(r'(\d+)\s*(?:tablets?|tabs?|caps?|capsules?|pills?|units?|puffs?)\b', med.dosage, re.IGNORECASE)
+            if tab_match:
+                dose_per_intake = int(tab_match.group(1))
+            else:
+                num_match = re.search(r'^\s*(\d+)\s*$', med.dosage)
+                if num_match:
+                    dose_per_intake = int(num_match.group(1))
+        if dose_per_intake <= 0:
+            dose_per_intake = 1
 
-        # Refill Notification Thresholds
+        daily_cons = dose_per_intake * (len(reminders) if reminders else 1)
+
+        # 1. Determine remaining treatment duration (days relative to today)
+        parsed_duration = None
+        if med.treatment and med.treatment.end_date:
+            try:
+                today = date.today()
+                t_days = (med.treatment.end_date - today).days
+                if t_days > 0:
+                    parsed_duration = t_days
+            except Exception:
+                pass
+
+        if parsed_duration is None and med.instructions:
+            dur_match = re.search(r'(?:duration:?\s*|for\s*|^|\b)(\d+)\s*(?:days?|d)\b', med.instructions, re.IGNORECASE)
+            if dur_match:
+                parsed_duration = int(dur_match.group(1))
+
+        remaining_treatment_days = parsed_duration if (parsed_duration is not None and parsed_duration > 0) else 1
+
+        # 2. Compute required stock for remaining treatment
+        required_stock = remaining_treatment_days * daily_cons
+        current_stock = max(0, med.quantity)
+
+        # 3. Decision: Refill needed ONLY IF current_stock < required_stock
         notif_data = None
-        if rem_days == 7:
-            notif_data = ("💊 Refill Reminder", f"You have only 7 days of {med.medicine_name} remaining. Please arrange a refill soon.")
-        elif rem_days == 5:
-            notif_data = ("⚠️ Medicine Running Low", f"Only 5 days of {med.medicine_name} remaining. Please purchase a refill.")
-        elif rem_days == 3:
-            notif_data = ("🚨 Critical Refill Alert", f"Only 3 days left of {med.medicine_name}. Restock immediately to avoid missing doses.")
-        elif rem_days == 1:
-            notif_data = ("🚨 Final Warning", f"Today's supply of {med.medicine_name} is almost over. Please refill now.")
-        elif rem_days <= 0 or med.quantity <= 0:
-            notif_data = ("❌ Medicine Out of Stock", f"No tablets remaining for {med.medicine_name}. Upcoming reminders may be affected.")
+        if current_stock < required_stock:
+            if current_stock <= 0 or med.quantity <= 0:
+                notif_data = ("❌ Medicine Out of Stock", f"No tablets remaining for {med.medicine_name}. Upcoming reminders may be affected.")
+            else:
+                notif_data = ("⚠️ Refill Reminder", f"Stock ({current_stock} tablets) is insufficient for remaining treatment ({remaining_treatment_days} days). Please arrange a refill.")
 
         if notif_data:
             title, message = notif_data

@@ -130,10 +130,49 @@ const Medicines = ({ treatment }) => {
 
   const filteredMedicines = medicines.filter((m) => {
     if (statusFilter === "All") return true;
+
     const pred = predictionsMap[m.id];
-    if (!pred) return true;
-    if (statusFilter === "Refill Soon" && (pred.status_category === "Refill Soon" || pred.status_category === "Urgent")) return true;
-    return pred.status_category === statusFilter;
+    let statusCategory = pred?.status_category;
+
+    if (!statusCategory) {
+      const durMatch = m.instructions ? m.instructions.match(/(?:duration:?\s*|for\s*|^|\b)(\d+)\s*(?:days?|d)\b/i) : null;
+      let fallbackDays = durMatch ? parseInt(durMatch[1], 10) : null;
+      const targetTreatment = m.treatment || effectiveTreatment;
+      if (!fallbackDays && targetTreatment?.start_date && targetTreatment?.end_date) {
+        const start = new Date(targetTreatment.start_date);
+        const end = new Date(targetTreatment.end_date);
+        const diffTime = Math.abs(end - start);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays > 0) {
+          fallbackDays = diffDays;
+        }
+      }
+
+      if (fallbackDays) {
+        const reqQty = fallbackDays * 1;
+        const stock = m.quantity || 0;
+        if (stock >= reqQty) {
+          statusCategory = "Healthy";
+        } else if (stock >= reqQty * 0.5) {
+          statusCategory = "Needs Refill";
+        } else {
+          statusCategory = "Critical";
+        }
+      } else {
+        statusCategory = "Healthy";
+      }
+    }
+
+    if (statusFilter === "Healthy") {
+      return statusCategory === "Healthy";
+    }
+    if (statusFilter === "Needs Refill") {
+      return statusCategory === "Refill Soon" || statusCategory === "Urgent" || statusCategory === "Needs Refill";
+    }
+    if (statusFilter === "Critical") {
+      return statusCategory === "Critical";
+    }
+    return true;
   });
 
   const displayMedicines = filteredMedicines;
@@ -180,7 +219,7 @@ const Medicines = ({ treatment }) => {
     setSaving(true);
     setMessage({ type: "", text: "" });
 
-    if (!effectiveTreatment?.id) {
+    if (!editingId && !effectiveTreatment?.id) {
       setMessage({ type: "error", text: "Choose a treatment before creating a medicine." });
       setSaving(false);
       return;
@@ -234,6 +273,9 @@ const Medicines = ({ treatment }) => {
       is_active: medicine.is_active ?? true,
     });
     setMessage({ type: "", text: "" });
+    setTimeout(() => {
+      document.getElementById("medicine-form")?.scrollIntoView({ behavior: "smooth" });
+    }, 50);
   };
 
   const handleDelete = async (medicineId) => {
@@ -314,8 +356,8 @@ const Medicines = ({ treatment }) => {
         </Card>
       )}
 
-      <div className={styles.gridLayout}>
-        {isFiltered && (
+      <div className={`${styles.gridLayout} ${(isFiltered || editingId) ? styles.hasForm : styles.fullWidth}`}>
+        {(isFiltered || editingId) && (
           <Card className={styles.formCard}>
             <div className={styles.cardHeader}>
               <h3>{editingId ? "Edit Medicine" : "Add Medicine"}</h3>
@@ -327,7 +369,7 @@ const Medicines = ({ treatment }) => {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className={styles.form}>
+            <form id="medicine-form" onSubmit={handleSubmit} className={styles.form}>
               <Input
                 label="Medicine Name"
                 name="medicine_name"
@@ -411,7 +453,7 @@ const Medicines = ({ treatment }) => {
           <div className={styles.cardHeader} style={{ flexWrap: "wrap", gap: "0.5rem" }}>
             <h3>{isFiltered ? "Medicine List" : "All Medicines"}</h3>
             <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
-              {["All", "Healthy", "Refill Soon", "Critical"].map((st) => (
+              {["All", "Healthy", "Needs Refill", "Critical"].map((st) => (
                 <button
                   key={st}
                   onClick={() => setStatusFilter(st)}
@@ -426,7 +468,7 @@ const Medicines = ({ treatment }) => {
                     color: statusFilter === st ? "#0F8B6D" : "#475569"
                   }}
                 >
-                  {st === "Healthy" ? "🟢 Healthy" : st === "Refill Soon" ? "🟡 Needs Refill" : st === "Critical" ? "🔴 Critical" : "All"}
+                  {st === "Healthy" ? "🟢 Healthy" : st === "Needs Refill" ? "🟡 Needs Refill" : st === "Critical" ? "🔴 Critical" : "All"}
                 </button>
               ))}
             </div>
@@ -438,25 +480,68 @@ const Medicines = ({ treatment }) => {
             <EmptyState
               title="No medicines found"
               message={
-                isFiltered
+                statusFilter !== "All"
+                  ? `No medicines found in the "${statusFilter}" category.`
+                  : isFiltered
                   ? "Add a medicine to manage it for this treatment."
                   : "No medicines match the selected filter criteria."
               }
               action={
-                <Button variant="secondary" onClick={() => { setStatusFilter("All"); navigate("/treatments"); }}>Browse Treatments</Button>
+                statusFilter !== "All" ? (
+                  <Button variant="secondary" onClick={() => setStatusFilter("All")}>
+                    View All Medicines
+                  </Button>
+                ) : (
+                  <Button variant="secondary" onClick={() => { setStatusFilter("All"); navigate("/treatments"); }}>
+                    Browse Treatments
+                  </Button>
+                )
               }
             />
           ) : (
             <div className={styles.medicineList}>
               {displayMedicines.map((medicine) => {
-                const pred = predictionsMap[medicine.id] || {
-                  status_category: "Healthy",
-                  badge_icon: "🟢",
-                  hex_color: "#10B981",
-                  remaining_days: 30,
-                  daily_consumption: 1,
-                  refill_date: "N/A",
-                  progress_percent: 100
+                const durMatch = medicine.instructions ? medicine.instructions.match(/(?:duration:?\s*|for\s*|^|\b)(\d+)\s*(?:days?|d)\b/i) : null;
+                let fallbackDays = durMatch ? parseInt(durMatch[1], 10) : null;
+                const targetTreatment = medicine.treatment || effectiveTreatment;
+                if (!fallbackDays && targetTreatment?.start_date && targetTreatment?.end_date) {
+                  const start = new Date(targetTreatment.start_date);
+                  const end = new Date(targetTreatment.end_date);
+                  const diffTime = Math.abs(end - start);
+                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                  if (diffDays > 0) {
+                    fallbackDays = diffDays;
+                  }
+                }
+                const reqQty = (fallbackDays || 1) * 1;
+                const stock = medicine.quantity || 0;
+                let fallbackStatus = "Healthy";
+                let fallbackBadge = "🟢";
+                let fallbackHex = "#10B981";
+                if (stock >= reqQty) {
+                  fallbackStatus = "Healthy";
+                  fallbackBadge = "🟢";
+                  fallbackHex = "#10B981";
+                } else if (stock >= reqQty * 0.5) {
+                  fallbackStatus = "Needs Refill";
+                  fallbackBadge = "🟡";
+                  fallbackHex = "#F59E0B";
+                } else {
+                  fallbackStatus = "Critical";
+                  fallbackBadge = "🔴";
+                  fallbackHex = "#EF4444";
+                }
+
+                const rawPred = predictionsMap[medicine.id];
+                const remDaysVal = rawPred?.remaining_days ?? fallbackDays;
+                const pred = {
+                  status_category: rawPred?.status_category || fallbackStatus,
+                  badge_icon: rawPred?.badge_icon || fallbackBadge,
+                  hex_color: rawPred?.hex_color || fallbackHex,
+                  remaining_days: remDaysVal,
+                  daily_consumption: rawPred?.daily_consumption || 1,
+                  refill_date: rawPred?.refill_date || rawPred?.refill_recommended_date || "N/A",
+                  progress_percent: rawPred?.progress_percent || 100
                 };
 
                 return (
@@ -480,7 +565,7 @@ const Medicines = ({ treatment }) => {
                             border: `1px solid ${pred.hex_color}40`
                           }}
                         >
-                          {pred.badge_icon} {pred.status_category} ({pred.remaining_days} Days Left)
+                          {pred.badge_icon} {pred.status_category}{pred.remaining_days !== null && pred.remaining_days !== undefined ? ` (${pred.remaining_days} Days Left)` : ""}
                         </span>
                         <span className={medicine.is_active ? styles.statusActive : styles.statusInactive}>
                           {medicine.is_active ? "Active" : "Inactive"}
@@ -499,7 +584,7 @@ const Medicines = ({ treatment }) => {
                       </div>
                       <div className={styles.detailRow}>
                         <span className={styles.detailLabel}>Days Remaining</span>
-                        <span style={{ fontWeight: 700, color: pred.hex_color }}>{pred.remaining_days} Days</span>
+                        <span style={{ fontWeight: 700, color: pred.hex_color }}>{pred.remaining_days !== null && pred.remaining_days !== undefined ? `${pred.remaining_days} Days` : "—"}</span>
                       </div>
                       <div className={styles.detailRow}>
                         <span className={styles.detailLabel}>Refill Before</span>
