@@ -248,6 +248,25 @@ def get_refill_notifications(db: Session, current_user: User):
     return refill_alerts
 
 
+def cleanup_old_notifications(db: Session, days: int = 30):
+    """
+    Deletes read notifications older than specified retention days (default: 30 days).
+    """
+    from datetime import datetime, timedelta
+    cutoff = datetime.utcnow() - timedelta(days=days)
+    deleted_count = (
+        db.query(Notification)
+        .filter(
+            Notification.is_read == True,
+            Notification.created_at < cutoff
+        )
+        .delete(synchronize_session=False)
+    )
+    db.commit()
+    logger.info(f"[Notification] Cleaned up {deleted_count} read notification(s) older than {days} days.")
+    return deleted_count
+
+
 def mark_all_as_read(db: Session, current_user: User):
     """
     Marks all unread notifications for current user as read.
@@ -258,6 +277,17 @@ def mark_all_as_read(db: Session, current_user: User):
     ).update({"is_read": True}, synchronize_session=False)
 
     db.commit()
+
+    try:
+        from app.services.websocket_manager import broadcast_notification_event
+        broadcast_notification_event(
+            user_id=current_user.id,
+            event_type="ALL_NOTIFICATIONS_READ",
+            payload={"user_id": current_user.id}
+        )
+    except Exception:
+        pass
+
     return {"message": "All notifications marked as read."}
 
 
@@ -267,6 +297,17 @@ def clear_all_notifications(db: Session, current_user: User):
     ).delete(synchronize_session=False)
 
     db.commit()
+
+    try:
+        from app.services.websocket_manager import broadcast_notification_event
+        broadcast_notification_event(
+            user_id=current_user.id,
+            event_type="ALL_NOTIFICATIONS_CLEARED",
+            payload={"user_id": current_user.id}
+        )
+    except Exception:
+        pass
+
     return {"message": "All notifications cleared successfully."}
 
 
@@ -304,11 +345,14 @@ def process_notification_action(
     current_user: User
 ):
     action_type = action_type.lower().strip()
-    print(f"[TRACE {datetime.utcnow().isoformat()}] [STAGE 8: BACKEND_API_REQUEST] process_notification_action: Notification ID={notification_id}, Action={action_type}", flush=True)
+    from app.config import settings
+    if settings.ENABLE_VERBOSE_NOTIFICATION_LOGS:
+        logger.debug(f"[STAGE 8: BACKEND_API_REQUEST] process_notification_action: Notification ID={notification_id}, Action={action_type}")
 
     if action_type == "delete":
         res = delete_notification(notification_id, db, current_user)
-        print(f"[TRACE {datetime.utcnow().isoformat()}] [STAGE 9: DATABASE_UPDATE] Notification ID={notification_id} DELETED from PostgreSQL.", flush=True)
+        if settings.ENABLE_VERBOSE_NOTIFICATION_LOGS:
+            logger.debug(f"[STAGE 9: DATABASE_UPDATE] Notification ID={notification_id} DELETED from PostgreSQL.")
         return res
 
     notification = get_notification_by_id(notification_id, db, current_user)
@@ -343,7 +387,8 @@ def process_notification_action(
         notification.is_read = True
         db.commit()
         db.refresh(notification)
-        print(f"[TRACE {datetime.utcnow().isoformat()}] [STAGE 9: DATABASE_UPDATE] Notification ID={notification_id} updated: is_read=True, History row inserted, Medicine qty decremented to {medicine.quantity}.", flush=True)
+        if settings.ENABLE_VERBOSE_NOTIFICATION_LOGS:
+            logger.debug(f"[STAGE 9: DATABASE_UPDATE] Notification ID={notification_id} updated: is_read=True, History row inserted, Medicine qty decremented to {medicine.quantity}.")
         return notification
 
     elif action_type in ["skipped", "skip"]:
@@ -367,7 +412,8 @@ def process_notification_action(
         notification.is_read = True
         db.commit()
         db.refresh(notification)
-        print(f"[TRACE {datetime.utcnow().isoformat()}] [STAGE 9: DATABASE_UPDATE] Notification ID={notification_id} updated: is_read=True, History row inserted.", flush=True)
+        if settings.ENABLE_VERBOSE_NOTIFICATION_LOGS:
+            logger.debug(f"[STAGE 9: DATABASE_UPDATE] Notification ID={notification_id} updated: is_read=True, History row inserted.")
         return notification
 
     elif action_type in ["snooze", "snoozed"]:
@@ -382,7 +428,8 @@ def process_notification_action(
         notification.is_read = True
         db.commit()
         db.refresh(notification)
-        print(f"[TRACE {datetime.utcnow().isoformat()}] [STAGE 9: DATABASE_UPDATE] Notification ID={notification_id} updated: is_read=True, Reminder snoozed.", flush=True)
+        if settings.ENABLE_VERBOSE_NOTIFICATION_LOGS:
+            logger.debug(f"[STAGE 9: DATABASE_UPDATE] Notification ID={notification_id} updated: is_read=True, Reminder snoozed.")
         return notification
 
     else:
@@ -399,7 +446,8 @@ def process_reminder_action(
     current_user: User
 ):
     action_type = action_type.lower().strip()
-    print(f"[TRACE {datetime.utcnow().isoformat()}] [STAGE 8: BACKEND_API_REQUEST] process_reminder_action: Reminder ID={reminder_id}, Action={action_type}", flush=True)
+    if settings.ENABLE_VERBOSE_NOTIFICATION_LOGS:
+        logger.debug(f"[STAGE 8: BACKEND_API_REQUEST] process_reminder_action: Reminder ID={reminder_id}, Action={action_type}")
 
     reminder = (
         db.query(Reminder)

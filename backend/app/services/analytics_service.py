@@ -93,46 +93,22 @@ def get_dashboard_summary(db: Session, current_user: User) -> Dict[str, Any]:
         med_n = first_rem.medicine.medicine_name if first_rem.medicine else "Medicine"
         next_reminder_str = f"{rem_t} - {med_n}"
 
-    # 7. Upcoming Refills & Stock Analysis
-    user_medicines = (
-        db.query(Medicine)
-        .join(Medicine.treatment)
-        .filter(Treatment.user_id == current_user.id, Medicine.is_active == True)
-        .all()
-    )
+    # 7. Upcoming Refills & Stock Analysis (Unified Single Source of Truth)
+    from app.services.medicine_service import get_refill_predictions
+    refill_preds = get_refill_predictions(db, current_user)
 
-    upcoming_refills_cnt = 0
-    low_stock_cnt = 0
+    healthy_cnt = sum(1 for p in refill_preds if p.get("status_category") == "Healthy")
+    needs_refill_cnt = sum(1 for p in refill_preds if p.get("status_category") == "Needs Refill")
+    critical_cnt = sum(1 for p in refill_preds if p.get("status_category") == "Critical")
+
+    low_stock_cnt = needs_refill_cnt + critical_cnt
+    upcoming_refills_cnt = low_stock_cnt
+
     refill_first_med = None
-    min_refill_days = 9999
-    healthy_cnt = 0
-    needs_refill_cnt = 0
-    critical_cnt = 0
-
-    import re
-    for m in user_medicines:
-        reminders = [r for r in m.reminders if r.status == "Active"] if hasattr(m, 'reminders') and m.reminders else []
-        dose_match = re.search(r'(\d+)', m.dosage or "1")
-        dose_per_intake = int(dose_match.group(1)) if dose_match else 1
-        daily_doses = dose_per_intake * (len(reminders) if reminders else 1)
-        rem_days = int(max(0, m.quantity) / daily_doses) if daily_doses > 0 else 30
-
-        if rem_days > 15:
-            healthy_cnt += 1
-        elif 8 <= rem_days <= 15:
-            needs_refill_cnt += 1
-        elif 4 <= rem_days <= 7:
-            needs_refill_cnt += 1
-            low_stock_cnt += 1
-            upcoming_refills_cnt += 1
-        else:
-            critical_cnt += 1
-            low_stock_cnt += 1
-            upcoming_refills_cnt += 1
-
-        if rem_days < min_refill_days:
-            min_refill_days = rem_days
-            refill_first_med = f"{m.medicine_name} ({int(rem_days)} days left)"
+    if refill_preds:
+        sorted_preds = sorted(refill_preds, key=lambda x: x.get("remaining_days", 9999))
+        first_p = sorted_preds[0]
+        refill_first_med = f"{first_p['medicine_name']} ({first_p['remaining_days']} days left)"
 
     # 8. Unread Notifications Count
     unread_notifications = (

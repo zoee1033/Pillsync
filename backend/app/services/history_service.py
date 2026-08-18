@@ -114,14 +114,15 @@ def create_history(
         if history.status in [HistoryStatus.TAKEN.value, HistoryStatus.SKIPPED.value]:
             reminder.next_trigger_at = calculate_next_trigger(
                 reminder.reminder_time,
-                reminder.repeat_type
+                getattr(reminder, "repeat_type", "Daily")
             )
 
     if history.status == HistoryStatus.TAKEN.value and medicine:
-        if medicine.quantity and medicine.quantity > 0:
-            medicine.quantity -= 1
+        med_qty = getattr(medicine, "quantity", None)
+        if med_qty and med_qty > 0:
+            medicine.quantity = med_qty - 1
 
-            if medicine.quantity <= 10:
+            if medicine.quantity <= 3:
                 existing_refill = (
                     db.query(Notification)
                     .filter(
@@ -148,18 +149,21 @@ def create_history(
     db.commit()
     db.refresh(new_history)
 
-    new_history.medicine_name = medicine.medicine_name if medicine else None
-    new_history.dosage = medicine.dosage if medicine else None
-    new_history.treatment_name = treatment.disease_name
-    new_history.start_date = treatment.start_date
-    new_history.end_date = treatment.end_date
-    new_history.completion_date = treatment.end_date if treatment.status == "Completed" else None
-    if treatment.start_date and treatment.end_date:
-        days = (treatment.end_date - treatment.start_date).days
+    new_history.medicine_name = getattr(medicine, "medicine_name", None) if medicine else None
+    new_history.dosage = getattr(medicine, "dosage", None) if medicine else None
+    new_history.treatment_name = getattr(treatment, "disease_name", None) if treatment else None
+    start_d = getattr(treatment, "start_date", None) if treatment else None
+    end_d = getattr(treatment, "end_date", None) if treatment else None
+    treat_status = getattr(treatment, "status", None) if treatment else None
+    new_history.start_date = start_d
+    new_history.end_date = end_d
+    new_history.completion_date = end_d if treat_status == "Completed" else None
+    if start_d and end_d:
+        days = (end_d - start_d).days
         new_history.duration = f"{max(days, 1)} days"
     else:
         new_history.duration = None
-    new_history.reminder_time = str(reminder.reminder_time) if reminder and reminder.reminder_time else None
+    new_history.reminder_time = str(reminder.reminder_time) if reminder and getattr(reminder, "reminder_time", None) else None
 
     return new_history
 

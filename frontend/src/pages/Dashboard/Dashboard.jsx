@@ -20,10 +20,18 @@ import {
   TbCalendarCheck,
   TbSparkles,
   TbChevronRight,
-  TbHistory
+  TbHistory,
+  TbUserCheck,
+  TbUser
 } from "react-icons/tb";
 import { Link } from "react-router-dom";
 import api from "../../services/api";
+import {
+  getPendingPatientRequests,
+  getMyCaregiver,
+  acceptCaregiverRequest,
+  rejectCaregiverRequest
+} from "../../services/caregiverService";
 
 const DashboardContent = () => {
   const { user } = useAuth();
@@ -32,6 +40,10 @@ const DashboardContent = () => {
   const [analytics, setAnalytics] = useState(null);
   const [reminders, setReminders] = useState([]);
   const [history, setHistory] = useState([]);
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [myCaregiver, setMyCaregiver] = useState(null);
+  const [actionLoading, setActionLoading] = useState(null);
+  const [requestError, setRequestError] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -50,10 +62,12 @@ const DashboardContent = () => {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      const [summaryRes, remindersRes, historyRes] = await Promise.allSettled([
+      const [summaryRes, remindersRes, historyRes, requestsRes, caregiverRes] = await Promise.allSettled([
         api.get("/dashboard/summary"),
         api.get("/reminders/"),
-        api.get("/history/")
+        api.get("/history/"),
+        getPendingPatientRequests(),
+        getMyCaregiver()
       ]);
 
       if (summaryRes.status === "fulfilled") {
@@ -65,10 +79,48 @@ const DashboardContent = () => {
       if (historyRes.status === "fulfilled") {
         setHistory(historyRes.value.data || []);
       }
+      if (requestsRes.status === "fulfilled") {
+        const val = requestsRes.value;
+        setPendingRequests(Array.isArray(val) ? val : (val?.data || []));
+      }
+      if (caregiverRes.status === "fulfilled") {
+        const val = caregiverRes.value;
+        setMyCaregiver(val && typeof val === "object" && !Array.isArray(val) ? (val.caregiver_name ? val : val.data) : null);
+      }
     } catch (err) {
       console.error("Dashboard data load error:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAcceptRequest = async (requestId) => {
+    setActionLoading(requestId);
+    setRequestError(null);
+    try {
+      await acceptCaregiverRequest(requestId);
+      fetchDashboardData();
+    } catch (err) {
+      console.error("Failed to accept caregiver request:", err);
+      const msg = err.response?.data?.detail || "Failed to accept caregiver request.";
+      setRequestError(msg);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleRejectRequest = async (requestId) => {
+    setActionLoading(requestId);
+    setRequestError(null);
+    try {
+      await rejectCaregiverRequest(requestId);
+      fetchDashboardData();
+    } catch (err) {
+      console.error("Failed to reject caregiver request:", err);
+      const msg = err.response?.data?.detail || "Failed to reject caregiver request.";
+      setRequestError(msg);
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -259,6 +311,68 @@ const DashboardContent = () => {
           {/* Right Column: Next Reminder, Refills & Recommendation Cards */}
           <aside className="space-y-6">
 
+            {/* Caregiver Requests Section */}
+            <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-3">
+              <div className="flex items-center gap-2 text-indigo-700 font-bold text-sm">
+                <TbUserCheck size={20} /> Caregiver Requests
+              </div>
+
+              {requestError && (
+                <div className="p-2.5 bg-red-50 border border-red-200 text-red-700 text-xs font-semibold rounded-xl">
+                  {requestError}
+                </div>
+              )}
+
+              {pendingRequests.length === 0 ? (
+                <p className="text-xs text-slate-500 font-medium italic">
+                  No pending caregiver requests.
+                </p>
+              ) : (
+                pendingRequests.map((req) => (
+                  <div key={req.id} className="bg-indigo-50/60 border border-indigo-100 rounded-xl p-4 space-y-2">
+                    <div className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+                      <TbUser className="text-indigo-600" size={18} /> {req.caregiver_name}
+                    </div>
+                    <div className="text-xs text-slate-500 font-mono">{req.caregiver_email}</div>
+                    <p className="text-xs text-slate-600 font-medium">
+                      wants to connect with you as your caregiver.
+                    </p>
+                    <div className="flex items-center gap-2 pt-1">
+                      <button
+                        onClick={() => handleAcceptRequest(req.id)}
+                        disabled={actionLoading === req.id}
+                        className="px-4 py-1.5 bg-[#0F8B6D] hover:bg-[#0D7A60] text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                      >
+                        {actionLoading === req.id ? "Accepting..." : "Accept"}
+                      </button>
+                      <button
+                        onClick={() => handleRejectRequest(req.id)}
+                        disabled={actionLoading === req.id}
+                        className="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Active Caregiver Card if connected */}
+            {myCaregiver && (
+              <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
+                <div className="flex items-center gap-2 text-[#0F8B6D] font-bold text-xs uppercase tracking-wider mb-2">
+                  <TbUserCheck size={18} /> My Caregiver
+                </div>
+                <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3.5">
+                  <div className="text-sm font-bold text-emerald-950 flex items-center gap-1.5">
+                    <TbUser className="text-emerald-700" size={18} /> {myCaregiver.caregiver_name}
+                  </div>
+                  <div className="text-xs text-emerald-700 font-medium mt-0.5">{myCaregiver.caregiver_email}</div>
+                </div>
+              </div>
+            )}
+
             {/* 5. Enhanced Next Reminder Card */}
             <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
               <div className="flex items-center gap-2 text-indigo-600 mb-2">
@@ -293,15 +407,15 @@ const DashboardContent = () => {
                   className="p-2.5 bg-emerald-50 border border-emerald-100 rounded-xl hover:bg-emerald-100/60 transition-colors block"
                 >
                   <div className="text-lg font-bold text-emerald-700">🟢 {stats.stock_healthy_count || 0}</div>
-                  <div className="text-[10px] font-bold text-emerald-800 mt-0.5">Healthy (&gt;15 Days)</div>
+                  <div className="text-[10px] font-bold text-emerald-800 mt-0.5">Healthy</div>
                 </Link>
                 <Link
                   to="/medicines"
-                  state={{ filterStatus: "Refill Soon" }}
+                  state={{ filterStatus: "Needs Refill" }}
                   className="p-2.5 bg-amber-50 border border-amber-100 rounded-xl hover:bg-amber-100/60 transition-colors block"
                 >
                   <div className="text-lg font-bold text-amber-700">🟡 {stats.stock_needs_refill_count || 0}</div>
-                  <div className="text-[10px] font-bold text-amber-800 mt-0.5">Needs Refill (4–15 Days)</div>
+                  <div className="text-[10px] font-bold text-amber-800 mt-0.5">Needs Refill</div>
                 </Link>
                 <Link
                   to="/medicines"
@@ -309,7 +423,7 @@ const DashboardContent = () => {
                   className="p-2.5 bg-red-50 border border-red-100 rounded-xl hover:bg-red-100/60 transition-colors block"
                 >
                   <div className="text-lg font-bold text-red-700">🔴 {stats.stock_critical_count || 0}</div>
-                  <div className="text-[10px] font-bold text-red-800 mt-0.5">Critical (≤3 Days)</div>
+                  <div className="text-[10px] font-bold text-red-800 mt-0.5">Critical</div>
                 </Link>
               </div>
             </div>

@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
@@ -84,7 +84,7 @@ const Reminders = ({ medicine, treatment }) => {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (!effectiveMedicine?.id) {
+    if (!editingId && !effectiveMedicine?.id) {
       setMessage({ type: "error", text: "Select a medicine before adding reminders." });
       return;
     }
@@ -156,6 +156,9 @@ const Reminders = ({ medicine, treatment }) => {
       status: reminder.status || "Active",
     });
     setMessage({ type: "", text: "" });
+    setTimeout(() => {
+      document.getElementById("reminder-form")?.scrollIntoView({ behavior: "smooth" });
+    }, 50);
   };
 
   const handleDelete = async (reminderId) => {
@@ -230,7 +233,7 @@ const Reminders = ({ medicine, treatment }) => {
         </Card>
       )}
 
-      {!isFiltered ? (
+      {!isFiltered && !editingId ? (
         <Card className={styles.listCard}>
           <div className={styles.cardHeader}>
             <h3>All Reminders</h3>
@@ -296,28 +299,30 @@ const Reminders = ({ medicine, treatment }) => {
         </Card>
       ) : (
         <>
-          <Card className={styles.medicineCard}>
-            <div className={styles.cardHeader}>
-              <h3>Medicine</h3>
-              <span className={effectiveMedicine.is_active ? styles.statusActive : styles.statusInactive}>
-                {effectiveMedicine.is_active ? "Active" : "Inactive"}
-              </span>
-            </div>
-            <div className={styles.medicineDetails}>
-              <div>
-                <div className={styles.detailLabel}>Name</div>
-                <div className={styles.detailValue}>{effectiveMedicine.medicine_name}</div>
+          {isFiltered && effectiveMedicine && (
+            <Card className={styles.medicineCard}>
+              <div className={styles.cardHeader}>
+                <h3>Medicine</h3>
+                <span className={effectiveMedicine.is_active ? styles.statusActive : styles.statusInactive}>
+                  {effectiveMedicine.is_active ? "Active" : "Inactive"}
+                </span>
               </div>
-              <div>
-                <div className={styles.detailLabel}>Dosage</div>
-                <div className={styles.detailValue}>{effectiveMedicine.dosage}</div>
+              <div className={styles.medicineDetails}>
+                <div>
+                  <div className={styles.detailLabel}>Name</div>
+                  <div className={styles.detailValue}>{effectiveMedicine.medicine_name}</div>
+                </div>
+                <div>
+                  <div className={styles.detailLabel}>Dosage</div>
+                  <div className={styles.detailValue}>{effectiveMedicine.dosage}</div>
+                </div>
+                <div>
+                  <div className={styles.detailLabel}>Quantity</div>
+                  <div className={styles.detailValue}>{effectiveMedicine.quantity}</div>
+                </div>
               </div>
-              <div>
-                <div className={styles.detailLabel}>Quantity</div>
-                <div className={styles.detailValue}>{effectiveMedicine.quantity}</div>
-              </div>
-            </div>
-          </Card>
+            </Card>
+          )}
 
           <div className={styles.gridLayout}>
             <Card className={styles.formCard}>

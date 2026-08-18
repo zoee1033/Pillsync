@@ -41,6 +41,22 @@ router = APIRouter(
 
 
 # =====================================================
+# Notification System Health Monitor Endpoint
+# =====================================================
+
+@router.get(
+    "/notification-health"
+)
+def notification_system_health_endpoint():
+    """
+    Exposes real-time notification architecture metrics:
+    scheduler status, queues, DLQ size, latency stats, worker status, and WebSockets.
+    """
+    from app.services.notification_health import get_notification_system_health
+    return get_notification_system_health()
+
+
+# =====================================================
 # Refill Notifications
 # =====================================================
 

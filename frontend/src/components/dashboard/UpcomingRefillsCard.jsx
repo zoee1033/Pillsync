@@ -79,9 +79,8 @@ const UpcomingRefillsCard = () => {
     );
   }
 
-  // Filter top items needing attention first (<=15 days or top 4)
-  const itemsNeedingAttention = predictions.filter(p => p.remaining_days <= 15);
-  const displayItems = itemsNeedingAttention.length > 0 ? itemsNeedingAttention : predictions.slice(0, 4);
+  // Display top tracked medicines (sorted by urgency, including Healthy) up to max 4
+  const displayItems = predictions.slice(0, 4);
 
   return (
     <div className={styles.card}>

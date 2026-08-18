@@ -139,7 +139,14 @@ export default function Login() {
 
       alert("Login Successful");
 
-      navigate("/dashboard");
+      const role = (response.user?.role || "patient").toLowerCase();
+      if (role === "caregiver") {
+        navigate("/caregiver/dashboard");
+      } else if (role === "admin") {
+        navigate("/admin/dashboard");
+      } else {
+        navigate("/dashboard");
+      }
 
     } catch (error) {
       alert(
@@ -252,6 +259,10 @@ export default function Login() {
       setForgotMsg({ type: "error", text: "Passwords do not match." });
       return;
     }
+    if (forgotData.newPassword.length < 6) {
+      setForgotMsg({ type: "error", text: "Password must be at least 6 characters long." });
+      return;
+    }
     try {
       setLoading(true);
       setForgotMsg({ type: "", text: "" });
@@ -261,11 +272,11 @@ export default function Login() {
         new_password: forgotData.newPassword,
         confirm_password: forgotData.confirmPassword,
       });
-      alert(res.message);
       setIsForgotMode(false);
       setForgotStep(1);
       setForgotData({ email: "", otp: "", newPassword: "", confirmPassword: "" });
       setForgotMsg({ type: "", text: "" });
+      setMessage({ type: "success", text: res.message || "Password reset successful. You can now log in with your new password." });
     } catch (err) {
       setForgotMsg({
         type: "error",
